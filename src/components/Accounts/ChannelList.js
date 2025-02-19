@@ -15,12 +15,12 @@ const Container = styled.div`
 
 const AccountTitleContainer = styled.div`
     width: 100%;
-    border-bottom: 3px solid gray;
+    border-bottom: 2px solid gray;
 
     display: flex;
     justify-content: center;
     margin-bottom: 5px;
-`
+`;
 
 const AccountTitleText = styled.h3`
 `
