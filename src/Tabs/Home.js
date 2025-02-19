@@ -1,61 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import styled from 'styled-components';
+
+import LoginDialog from 'components/Home/LoginDialog';
+import StatsView from 'components/Home/StatsView';
 
 const Container = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
-
     justify-content: center;
     align-items: center;
 
     background-color: #bfbfbf;
 `;
 
-const LoginContainer = styled.div`
-    box-sizing: border-box;
-    width: 40%;
-    max-width: 400px;
-    height: 300px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
+export default function HomeView() {
+    // tmp solution to use state to store login state
+    // const [loginState, setLoginState] = useState(false);
+    // test code
+    const [loginState, setLoginState] = useState(true);
 
-    background-color: #f0f0f0;
-    border-radius: 16px;
-
-    padding-top: 30px;
-`;
-
-const Title = styled.h1`
-    margin-bottom: 40px;
-`;
-
-const InputContainer = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    width: 70%;
-    gap: 10px;
-`;
-
-const AccountsView = () => {
-    // tmp solution to use state to store the accounts
-    const [accounts, setAccounts] = useState([]);
+    const handleLogin = (username, password) => {
+        if (username === 'tester' && password === '123456') {
+            setLoginState(true);
+            return true;
+        } else {
+            return false;
+        }
+    };
 
     return (
-        <Container>
-            <LoginContainer>
-                <Title> Login </Title>
-                <InputContainer>
-                    <label>username:</label>
-                    <input></input>
-                    <label>password:</label>
-                    <input></input>
-                </InputContainer>
-            </LoginContainer>
-        </Container>
+        <Container>{loginState ? <StatsView /> : <LoginDialog onLogin={handleLogin} />}</Container>
     );
-};
-export default AccountsView;
+}
