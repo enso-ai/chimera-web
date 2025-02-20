@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 
 import styled from 'styled-components';
 
-import ChannelList from '../components/Accounts/ChannelList';
-import ChannelData from '../components/Accounts/ChannelData';
+import ChannelList from '../components/Channels/ChannelList';
+import ChannelData from '../components/Channels/ChannelData';
 
 import { listChannels } from 'services/backend';
 
@@ -24,7 +24,7 @@ const ChannelListContainer = styled.div`
     background-color: #d0d0d0; /* Just for visibility */
 `;
 
-const AccountsView = () => {
+const ChannelsView = () => {
     const [channels, setChannels] = useState([]);
     const [highlightedChannel, setHighlightedChannel] = useState(null);
 
@@ -55,4 +55,4 @@ const AccountsView = () => {
         </Container>
     );
 };
-export default AccountsView;
+export default ChannelsView;

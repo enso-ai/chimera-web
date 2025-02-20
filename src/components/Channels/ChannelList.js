@@ -104,7 +104,7 @@ export default function ChannelList({
     return (
         <Container>
             <AccountTitleContainer>
-                <AccountTitleText>Accounts</AccountTitleText>
+                <AccountTitleText>Channels</AccountTitleText>
             </AccountTitleContainer>
             <AccountsContainer>
                 {channels.map((channel, index) => (
@@ -117,7 +117,7 @@ export default function ChannelList({
                 ))}
             </AccountsContainer>
             <AddChannelButton onClick={redirectToTiktok}>
-                <AccountButtonText>Add Account</AccountButtonText>
+                <AccountButtonText>Add Channel</AccountButtonText>
             </AddChannelButton>
         </Container>
     );
