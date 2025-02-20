@@ -33,6 +33,34 @@ export const listChannels = async () => {
     return json;
 };
 
+export const getTotalStats = async () => {
+    const response = await fetch(BASE_URL + 'channels/stats', {
+        method: 'GET',
+    });
+
+    const json = await response.json();
+    return json;
+}
+
+export const getChannelStats = async (channelId) => {
+    const response = await fetch(BASE_URL + 'channels/' + channelId + '/stats', {
+        method: 'GET',
+    });
+
+    const json = await response.json();
+    return json;
+}
+
+export const getChannelVideos = async (channelId) => {
+    const response = await fetch(BASE_URL + 'channels/' + channelId + '/videos', {
+        method: 'GET',
+    });
+
+    const json = await response.json();
+    return json;
+}
+
+// developer endpoints, import/export db
 export const downloadChannels = async () => {
     // return file blob
     const response = await fetch(BASE_URL + 'channels/export', {
