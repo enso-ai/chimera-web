@@ -1,5 +1,7 @@
-// const BASE_URL = 'https://tiktok-backend.v01s.com/api/';
-const BASE_URL = 'http://127.0.0.1:8000/api/';
+const BASE_URL =
+    process.env == 'production'
+        ? 'https://tiktok-backend.v01s.com/api/'
+        : 'http://127.0.0.1:8000/api/';
 
 export const verifyTiktokToken = async (code) => {
     const data = {
@@ -40,7 +42,7 @@ export const getTotalStats = async () => {
 
     const json = await response.json();
     return json;
-}
+};
 
 export const getChannelStats = async (channelId) => {
     const response = await fetch(BASE_URL + 'channels/' + channelId + '/stats', {
@@ -49,7 +51,7 @@ export const getChannelStats = async (channelId) => {
 
     const json = await response.json();
     return json;
-}
+};
 
 export const getChannelVideos = async (channelId) => {
     const response = await fetch(BASE_URL + 'channels/' + channelId + '/videos', {
@@ -58,7 +60,7 @@ export const getChannelVideos = async (channelId) => {
 
     const json = await response.json();
     return json;
-}
+};
 
 // developer endpoints, import/export db
 export const downloadChannels = async () => {
