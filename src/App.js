@@ -4,7 +4,9 @@ import styled from 'styled-components';
 import Header from './components/Header';
 
 import { tabList } from './Tabs';
-import TiktokCallback from './TiktokCallback';
+import TiktokCallback from 'pages/TiktokCallback';
+import TermsOfService from 'pages/TermsOfService';
+import PrivacyPolicy from 'pages/PrivacyPolicy';
 import Footer from 'components/Footer';
 
 const LayoutContainer = styled.div`
@@ -57,6 +59,8 @@ function App() {
                     ))}
                 </Route>
                 <Route path='/login_callback' element={<TiktokCallback />} />
+                <Route path='/terms-of-service' element={<TermsOfService />} />
+                <Route path='/privacy-policy' element={<PrivacyPolicy />} />
             </Routes>
         </Router>
     );

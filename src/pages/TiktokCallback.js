@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
-import { verifyTiktokToken } from './services/backend';
+import { verifyTiktokToken } from '../services/backend';
 
 
 export default function TiktokCallback() {
