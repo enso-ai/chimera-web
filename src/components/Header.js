@@ -39,13 +39,14 @@ const IconContainer = styled.div`
 `;
 
 const IconImage = styled.img`
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
 `;
 
 const Tab = styled(Link)`
     height: 75px;
     min-width: 100px;
+    box-sizing: border-box;
     font-size: 24px;
     text-decoration: none;
     color: #5f5f5f;
@@ -55,6 +56,8 @@ const Tab = styled(Link)`
     justify-content: center;
     align-items: center;
     cursor: pointer;
+    padding-left: 20px;
+    padding-right: 20px;
 `;
 
 const UserProfileContainer = styled.div`
@@ -78,7 +81,7 @@ const Header = () => {
         <HeaderContainer>
             <TabContainer>
                 <IconContainer>
-                    <IconImage src='/logo.png' alt='logo' width='40' height='40' />
+                    <IconImage src='/logo.png' alt='logo' width='50' height='50' />
                 </IconContainer>
                 {tabList.map((tab, index) => (
                     <Tab
