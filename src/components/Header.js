@@ -1,14 +1,13 @@
+import { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router';
 
-import { FaCircleUser, FaTiktok } from 'react-icons/fa6';
-import { tabList } from '../Tabs';
+import { FaCircleUser } from 'react-icons/fa6';
+import { tabList } from 'Tabs';
 
 const HeaderContainer = styled.div`
     height: 75px;
-    width: calc(100% - 20px);
-    padding-left: 10px;
-    padding-right: 10px;
+    width: 100%;
     background-color: #f0f0f0;
 
     display: flex;
@@ -28,17 +27,34 @@ const TabContainer = styled.div`
     justify-content: flex-start;
     align-items: center;
     flex-grow: 1;
+    gap: 10px;
 `;
 
 const IconContainer = styled.div`
-    margin-right: 10px;
+    border-radius: 50%;
+    overflow: hidden;
+
+    margin-left: 20px;
+    margin-right: 20px;
+`;
+
+const IconImage = styled.img`
+    width: 40px;
+    height: 40px;
 `;
 
 const Tab = styled(Link)`
-    margin: 0 10px;
+    height: 75px;
+    min-width: 100px;
     font-size: 24px;
     text-decoration: none;
     color: #5f5f5f;
+    background-color: ${(props) => (props.to === props.currentTab ? '#bfbfbf' : 'transparent')};
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
 `;
 
 const UserProfileContainer = styled.div`
@@ -47,17 +63,30 @@ const UserProfileContainer = styled.div`
     align-items: center;
     justify-content: center;
     flex-grow: 0;
+
+    padding-right: 20px;
 `;
 
 const Header = () => {
+    const [currentTab, setCurrentTab] = useState(tabList[0].href);
+
+    const handleTabClick = (href) => {
+        setCurrentTab(href);
+    };
+
     return (
         <HeaderContainer>
             <TabContainer>
                 <IconContainer>
-                    <FaTiktok size={40} />
+                    <IconImage src='/logo.png' alt='logo' width='40' height='40' />
                 </IconContainer>
                 {tabList.map((tab, index) => (
-                    <Tab key={index} to={tab.href}>
+                    <Tab
+                        key={index}
+                        to={tab.href}
+                        onClick={() => handleTabClick(tab.href)}
+                        currentTab={currentTab}
+                    >
                         {tab.label}
                     </Tab>
                 ))}
