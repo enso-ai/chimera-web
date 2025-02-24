@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
-import { getTotalStats } from 'services/backend';
+import { getTotalStats, getChannelStats } from 'services/backend';
 import { formatNumber } from 'utils/numbers';
+import ChartComponent from 'components/Chart';
 
 const Container = styled.div`
     background: transparent;
@@ -63,6 +64,7 @@ const StatsCard = ({ title, count }) => {
 export default function StatsView() {
     const statsKeys = ['channels', 'videos', 'views', 'likes', 'comments'];
     const [counters, setCounters] = useState(statsKeys.map((key) => ({ [key]: 'N/A' })));
+    const [statsData, setStatsData] = useState([]);
 
     useEffect(() => {
         getTotalStats().then((data) => {
@@ -78,13 +80,24 @@ export default function StatsView() {
         });
     }, []);
 
+    useEffect(() => {
+        const channel_id = '508ea579-c51d-5124-856d-975829362fe4';
+        getChannelStats(channel_id).then((res) => {
+            console.log('returned stats', res);
+            setStatsData(res);
+        });
+    }, []);
+
+    // placeholder
+    useEffect(() => {}, []);
+
     return (
         <Container>
             {statsKeys.map((key) => {
                 return <StatsCard title={key} count={counters[key]} />;
             })}
             <StatsChartContainer>
-                <h1>There will be a chart</h1>
+                <ChartComponent data={[...statsData].reverse()} />
             </StatsChartContainer>
         </Container>
     );

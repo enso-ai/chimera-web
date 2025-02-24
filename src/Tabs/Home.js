@@ -17,7 +17,7 @@ export default function HomeView() {
     // tmp solution to use state to store login state
     // const [loginState, setLoginState] = useState(false);
     // test code
-    const [loginState, setLoginState] = useState(true);
+    const [loginState, setLoginState] = useState(false);
 
     const handleLogin = (username, password) => {
         if (username === 'tester' && password === '123456') {
