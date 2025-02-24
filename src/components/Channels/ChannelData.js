@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-
 import styled from 'styled-components';
+
 import LoadingSpinner from 'components/Loader';
+import ChartComponent from 'components/Chart';
 import { getChannelStats, getChannelVideos, backfill_stats } from 'services/backend';
 import { formatNumber } from 'utils/numbers';
 
@@ -148,7 +149,9 @@ export default function ChannelDataView({ channel }) {
                     </StatsCardContainer>
                 ))}
             </StatsRow>
-            <StatsChartContainer>There will be charts in here</StatsChartContainer>
+            <StatsChartContainer>
+                <ChartComponent data={[...statsData].reverse()} />
+            </StatsChartContainer>
         </Container>
     );
 }
