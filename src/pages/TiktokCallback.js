@@ -28,7 +28,7 @@ export default function TiktokCallback() {
 
         verifyTiktokToken(code).then((data) => {
             console.log("print data", data);
-            navigate('/account_info');
+            navigate('/channels');
         });
 
 
