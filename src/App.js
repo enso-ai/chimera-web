@@ -12,13 +12,14 @@ import Footer from 'components/Footer';
 const LayoutContainer = styled.div`
     width: 100vw;
     // Full viewport height minus header height and footer height
-    // height: calc(100vh - 125px);
+    height: calc(100vh - 125px);
     box-sizing: border-box;
     height: 100vh;
     min-width: 400px;
 
     // for header
     padding-top: 75px;
+    padding-bottom: 50px;
     background-color: #bfbfbf;
 
     display: flex;

@@ -4,9 +4,9 @@ import { Link } from 'react-router';
 const FooterContainer = styled.div`
     width: 100%;
     height: 50px;
-    podition: fixed;
-    bottom: 0;
-    left: 0;
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
     z-index: 100;
 
     background-color: ${(props) => props.bg_color};
