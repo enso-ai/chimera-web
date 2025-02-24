@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router';
 
@@ -73,7 +73,15 @@ const UserProfileContainer = styled.div`
 const Header = () => {
     const [currentTab, setCurrentTab] = useState(tabList[0].href);
 
-    const handleTabClick = (href) => {
+    useEffect(() => {
+        // initialize current tab based on current path
+        const currentPath = window.location.pathname;
+        setCurrentTab(currentPath);
+    }, []);
+
+    const handleTabClick = (event, href) => {
+        if (event.ctrlKey || event.metaKey) return;
+
         setCurrentTab(href);
     };
 
@@ -87,7 +95,7 @@ const Header = () => {
                     <Tab
                         key={index}
                         to={tab.href}
-                        onClick={() => handleTabClick(tab.href)}
+                        onClick={(event) => handleTabClick(event, tab.href)}
                         currentTab={currentTab}
                     >
                         {tab.label}
