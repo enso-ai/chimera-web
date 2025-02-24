@@ -5,17 +5,16 @@ import { CLIENT_KEY, REDIRECT_URI } from 'constants';
 const Container = styled.div`
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 75px);
+    height: 100%;
     width: 100%;
     justify-content: space-between;
     align-items: center;
     overflow: hidden;
-
 `;
 
 const AccountTitleContainer = styled.div`
     width: 100%;
-    border-bottom: 2px solid gray;
+    border-bottom: 2px solid #9a9a9a;
 
     display: flex;
     justify-content: center;
@@ -23,7 +22,8 @@ const AccountTitleContainer = styled.div`
 `;
 
 const AccountTitleText = styled.h3`
-`
+    color: #5f5f5f;
+`;
 
 const AccountsContainer = styled.div`
     flex-grow: 1;
@@ -44,18 +44,18 @@ const ChannelContainer = styled.div`
     padding-left: 15px;
     align-items: center;
     cursor: pointer;
-    
-    background-color: ${props => props.selected ? 'white' : 'transparent'};
-`
+
+    background-color: ${(props) => (props.selected ? '#a0a0a0' : 'transparent')};
+`;
 
 const ChannelLabel = styled.p`
     font-size: 16px;
 
-    -webkit-user-select: none; /* Safari */        
+    -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
-`
+`;
 
 const AddChannelButton = styled.button`
     width: 80%;
@@ -70,11 +70,12 @@ const AddChannelButton = styled.button`
     color: black;
     cursor: pointer;
 
-    margin-bottom: 24px;
+    margin-bottom: 20px;
 `;
 
 const AccountButtonText = styled.h3`
-`
+    color: #5f5f5f;
+`;
 
 export default function ChannelList({
     channels, onSelectChannel, highlightedChannel

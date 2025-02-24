@@ -62,6 +62,23 @@ export const getChannelVideos = async (channelId) => {
     return json;
 };
 
+export const backfill_stats = async (channelId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(BASE_URL + 'channels/' + channelId + '/stats/backfill', {
+        method: 'POST',
+        body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload file');
+    }
+
+    return data;
+};
+
 // developer endpoints, import/export db
 export const downloadChannels = async () => {
     // return file blob
