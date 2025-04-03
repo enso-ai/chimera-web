@@ -12,19 +12,26 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         const checkAuth = async () => {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                handleLogout();
-                return;
-            }
-
             try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    throw new Error('No token found');
+                }
+
                 const userData = await getCurrentUser();
                 setUser({
                     id: userData.id,
-                    username: userData.username
+                    username: userData.username,
                 });
             } catch (error) {
+                // Only redirect if it's a 401 error (session expired) and not on auth pages
+                console.log('curent path: ', window.location.pathname);
+                if (
+                    window.location.pathname.includes(PageNames.TERMS_OF_SERVICE) ||
+                    window.location.pathname.includes(PageNames.PRIVACY_POLICY)
+                ) {
+                    return;
+                }
                 handleLogout();
             } finally {
                 setLoading(false);

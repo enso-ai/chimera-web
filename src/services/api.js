@@ -31,7 +31,6 @@ api.interceptors.response.use(
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user_id');
             localStorage.removeItem('username');
-            window.location.href = '/signin';
             return Promise.reject(new Error('Session expired. Please login again.'));
         }
         
