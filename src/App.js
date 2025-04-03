@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router';
+import { AuthProvider } from './hocs/auth';
 
 import styled from 'styled-components';
 import Header from './components/Header';
@@ -55,17 +56,19 @@ const Layout = () => {
 function App() {
     return (
         <Router>
-            <Routes>
-                <Route element={<Layout />}>
-                    {tabList.map((tab) => (
-                        <Route key={tab.href} path={tab.href} element={<tab.comp />} />
-                    ))}
-                    <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
-                </Route>
-                <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
-                <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
-                <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
-            </Routes>
+            <AuthProvider>
+                <Routes>
+                    <Route element={<Layout />}>
+                        {tabList.map((tab) => (
+                            <Route key={tab.href} path={tab.href} element={<tab.comp />} />
+                        ))}
+                        <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
+                    </Route>
+                    <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
+                    <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
+                    <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
+                </Routes>
+            </AuthProvider>
         </Router>
     );
 }
