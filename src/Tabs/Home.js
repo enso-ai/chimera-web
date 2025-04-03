@@ -15,8 +15,6 @@ const Container = styled.div`
 
 export default function HomeView() {
     // tmp solution to use state to store login state
-    // const [loginState, setLoginState] = useState(false);
-    // test code
     const [loginState, setLoginState] = useState(false);
 
     const handleLogin = (username, password) => {
