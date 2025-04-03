@@ -7,7 +7,9 @@ import { tabList } from './Tabs';
 import TiktokCallback from 'pages/TiktokCallback';
 import TermsOfService from 'pages/TermsOfService';
 import PrivacyPolicy from 'pages/PrivacyPolicy';
+import Signin from 'pages/Signin';
 import Footer from 'components/Footer';
+import { PageNames } from './constants';
 
 const LayoutContainer = styled.div`
     width: 100vw;
@@ -58,10 +60,11 @@ function App() {
                     {tabList.map((tab) => (
                         <Route key={tab.href} path={tab.href} element={<tab.comp />} />
                     ))}
+                    <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
                 </Route>
-                <Route path='/login_callback' element={<TiktokCallback />} />
-                <Route path='/terms-of-service' element={<TermsOfService />} />
-                <Route path='/privacy-policy' element={<PrivacyPolicy />} />
+                <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
+                <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
+                <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
             </Routes>
         </Router>
     );
