@@ -1,113 +1,91 @@
-const BASE_URL =
-    process.env.REACT_APP_STAGE == 'prod'
-        ? 'https://tiktok-backend.v01s.com/api/'
-        : 'http://127.0.0.1:8000/api/';
+import api from './api';
+
+// Authentication functions
+export const login = async (username, password) => {
+    const response = await api.post('auth/login', { username, password });
+    
+    // Store user data
+    localStorage.setItem('auth_token', response.data.access_token);
+    localStorage.setItem('user_id', response.data.id);
+    localStorage.setItem('username', response.data.username);
+    
+    return response.data;
+};
+
+export const signup = async (username, password) => {
+    const response = await api.post('auth/signup', { username, password });
+    
+    // Store user data
+    localStorage.setItem('auth_token', response.data.access_token);
+    localStorage.setItem('user_id', response.data.id);
+    localStorage.setItem('username', response.data.username);
+    
+    return response.data;
+};
 
 export const verifyTiktokToken = async (code) => {
-    const data = {
-        code: code,
-    };
-
-    const response = await fetch(BASE_URL + 'channels/authenticate', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
-
-    const json = await response.json();
-    return json;
+    const response = await api.post('channels/authenticate', { code });
+    return response.data;
 };
 
 export const listChannels = async () => {
-    // todo pull a list of token
-    const params = new URLSearchParams({
-        page_no: 1,
-        page_size: 20,
+    const response = await api.get('channels/', {
+        params: {
+            page_no: 1,
+            page_size: 20,
+        }
     });
-
-    const url = BASE_URL + 'channels/?' + params.toString();
-    console.log('show url: ', url);
-    const response = await fetch(url, { method: 'GET', mode: 'cors' });
-
-    const json = await response.json();
-    return json;
+    return response.data;
 };
 
 export const getTotalStats = async () => {
-    const response = await fetch(BASE_URL + 'channels/stats', {
-        method: 'GET',
-    });
-
-    const json = await response.json();
-    return json;
+    const response = await api.get('channels/stats');
+    return response.data;
 };
 
 export const getChannelStats = async (channelId) => {
-    const response = await fetch(BASE_URL + 'channels/' + channelId + '/stats', {
-        method: 'GET',
-    });
-
-    const json = await response.json();
-    return json;
+    const response = await api.get(`channels/${channelId}/stats`);
+    return response.data;
 };
 
 export const getChannelVideos = async (channelId) => {
-    const response = await fetch(BASE_URL + 'channels/' + channelId + '/videos', {
-        method: 'GET',
-    });
-
-    const json = await response.json();
-    return json;
+    const response = await api.get(`channels/${channelId}/videos`);
+    return response.data;
 };
 
 export const backfill_stats = async (channelId, file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(BASE_URL + 'channels/' + channelId + '/stats/backfill', {
-        method: 'POST',
-        body: formData,
+    const response = await api.post(`channels/${channelId}/stats/backfill`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
     });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload file');
-    }
-
-    return data;
+    return response.data;
 };
 
 // developer endpoints, import/export db
 export const downloadChannels = async () => {
-    // return file blob
-    const response = await fetch(BASE_URL + 'channels/export', {
-        method: 'GET',
+    const response = await api.get('channels/export', {
+        responseType: 'blob',
     });
-
-    if (!response.ok) {
-        throw new Error('Failed to download file');
-    }
-
-    // Create a downloadable link
-    const blob = await response.blob();
-    return blob;
+    return response.data;
 };
 
 export const uploadChannels = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(BASE_URL + 'channels/import', {
-        method: 'POST',
-        body: formData,
+    const response = await api.post('channels/import', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
     });
+    return response.data;
+};
 
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload file');
-    }
-
-    return data;
+export const getCurrentUser = async () => {
+    const response = await api.get('auth/me');
+    return response.data;
 };
