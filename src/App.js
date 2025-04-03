@@ -7,7 +7,7 @@ import { tabList } from './Tabs';
 import TiktokCallback from 'pages/TiktokCallback';
 import TermsOfService from 'pages/TermsOfService';
 import PrivacyPolicy from 'pages/PrivacyPolicy';
-import Signin from 'pages/Signin';
+import Signin from 'pages/SignIn';
 import Footer from 'components/Footer';
 import { PageNames } from './constants';
 
