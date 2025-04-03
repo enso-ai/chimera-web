@@ -1,5 +1,5 @@
 const BASE_URL =
-    process.env == 'production'
+    process.env.REACT_APP_STAGE == 'prod'
         ? 'https://tiktok-backend.v01s.com/api/'
         : 'http://127.0.0.1:8000/api/';
 
