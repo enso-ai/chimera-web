@@ -175,7 +175,7 @@ const Header = () => {
                 ))}
             </TabContainer>
             <UserProfileContainer ref={dropdownRef} onClick={toggleDropdown}>
-                <UserNameTag>{user?.username}</UserNameTag>
+                <UserNameTag>Hi, {user?.username}</UserNameTag>
                 <FaCircleUser size={40} color='#5F5F5F' />
                 {isDropdownOpen && (
                     <DropdownMenu>
