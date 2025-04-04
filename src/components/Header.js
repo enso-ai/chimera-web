@@ -123,9 +123,9 @@ const Header = () => {
 
     useEffect(() => {
         // initialize current tab based on current path
-        const currentPathSegs = window.location.pathname.split('/');
-        if (currentPathSegs.length > 2 && currentPathSegs[0] === 'app') {
-            setCurrentTab(currentPathSegs[1]);
+        const currentPathSegs = window.location.pathname.split('/'); // '', 'app', '{tab}'
+        if (currentPathSegs.length > 2 && currentPathSegs[1] === 'app') {
+            setCurrentTab(currentPathSegs[2]);
         } else {
             console.log("current path doesn't contain app segs, skip setting current tab");
         }
