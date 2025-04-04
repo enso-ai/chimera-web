@@ -75,8 +75,12 @@ const Header = () => {
 
     useEffect(() => {
         // initialize current tab based on current path
-        const currentPath = window.location.pathname;
-        setCurrentTab(currentPath);
+        const currentPathSegs = window.location.pathname.split('/');
+        if (currentPathSegs.length > 2 && currentPathSegs[0] === 'app') {
+            setCurrentTab(currentPathSegs[1]);
+        } else {
+            console.log("current path doesn't contain app segs, skip setting current tab");
+        }
     }, []);
 
     const handleTabClick = (event, href) => {
