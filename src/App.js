@@ -58,12 +58,12 @@ function App() {
         <Router>
             <AuthProvider>
                 <Routes>
-                    <Route element={<Layout />}>
+                    <Route path={`${PageNames.APP}`} element={<Layout />}>
                         {tabList.map((tab) => (
                             <Route key={tab.href} path={tab.href} element={<tab.comp />} />
                         ))}
-                        <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
                     </Route>
+                    <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
                     <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
                     <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
                     <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />

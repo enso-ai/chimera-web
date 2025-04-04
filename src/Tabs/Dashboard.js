@@ -64,32 +64,32 @@ const StatsCard = ({ title, count }) => {
     );
 };
 
-export default function Home() {
+export default function Dashboard() {
     const statsKeys = ['channels', 'videos', 'views', 'likes', 'comments'];
     const [counters, setCounters] = useState(statsKeys.map((key) => ({ [key]: 'N/A' })));
     const [statsData, setStatsData] = useState([]);
 
-    useEffect(() => {
-        getTotalStats().then((data) => {
-            console.log(data);
-            const newCounters = {};
-            for (const key of statsKeys) {
-                console.log('key=', key, ' value=', data[key]);
-                newCounters[key] = data[key];
-            }
-            console.log(newCounters);
+    // useEffect(() => {
+    //     getTotalStats().then((data) => {
+    //         console.log(data);
+    //         const newCounters = {};
+    //         for (const key of statsKeys) {
+    //             console.log('key=', key, ' value=', data[key]);
+    //             newCounters[key] = data[key];
+    //         }
+    //         console.log(newCounters);
 
-            setCounters(newCounters);
-        });
-    }, []);
+    //         setCounters(newCounters);
+    //     });
+    // }, []);
 
-    useEffect(() => {
-        const channel_id = '508ea579-c51d-5124-856d-975829362fe4';
-        getChannelStats(channel_id).then((res) => {
-            console.log('returned stats', res);
-            setStatsData(res);
-        });
-    }, []);
+    // useEffect(() => {
+    //     const channel_id = '508ea579-c51d-5124-856d-975829362fe4';
+    //     getChannelStats(channel_id).then((res) => {
+    //         console.log('returned stats', res);
+    //         setStatsData(res);
+    //     });
+    // }, []);
 
     return (
         <Container>

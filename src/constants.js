@@ -4,7 +4,7 @@ export const REDIRECT_URI = 'https://chimera.v01s.com/login_callback/';
 
 export const PageNames = {
     SIGNIN: 'signin',
-    HOME: 'home',
+    APP: 'app',
     LOGIN_CALLBACK: 'login_callback',
     TERMS_OF_SERVICE: 'terms-of-service',
     PRIVACY_POLICY: 'privacy-policy',
