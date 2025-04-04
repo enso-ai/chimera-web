@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router';
 import { AuthProvider } from './hocs/auth';
 
 import styled from 'styled-components';
@@ -43,33 +43,34 @@ const MainContainer = styled.div`
 
 const Layout = () => {
     return (
-        <LayoutContainer>
-            <Header /> {/* Header is always present */}
-            <MainContainer>
-                <Outlet /> {/* This renders the current route's component */}
-            </MainContainer>
-            <Footer />
-        </LayoutContainer>
+        <AuthProvider>
+            <LayoutContainer>
+                {/* Header is always present */}
+                <Header />
+                <MainContainer>
+                    <Outlet /> {/* This renders the current route's component */}
+                </MainContainer>
+                <Footer />
+            </LayoutContainer>
+        </AuthProvider>
     );
 };
 
 function App() {
     return (
-        <Router>
-            <AuthProvider>
-                <Routes>
-                    <Route path={`${PageNames.APP}`} element={<Layout />}>
-                        {tabList.map((tab) => (
-                            <Route key={tab.href} path={tab.href} element={<tab.comp />} />
-                        ))}
-                    </Route>
-                    <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
-                    <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
-                    <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
-                    <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
-                </Routes>
-            </AuthProvider>
-        </Router>
+        <BrowserRouter>
+            <Routes>
+                <Route element={<Layout />}>
+                    {tabList.map((tab) => (
+                        <Route key={tab.href} path={tab.href} element={<tab.comp />} />
+                    ))}
+                </Route>
+                <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
+                <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
+                <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
+                <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
+            </Routes>
+        </BrowserRouter>
     );
 }
 

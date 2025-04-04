@@ -31,7 +31,9 @@ api.interceptors.response.use(
             localStorage.removeItem('auth_token');
             localStorage.removeItem('user_id');
             localStorage.removeItem('username');
-            return Promise.reject(new Error('Session expired. Please login again.'));
+            return Promise.reject(new Error('No Authorization'));
+        } else if (error.response?.status === 409) {
+            return Promise.reject(new Error('Conflict'));
         }
         
         // Handle other errors
