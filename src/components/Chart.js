@@ -30,12 +30,9 @@ export default function ChartComponent({ data }){
         }
     };
 
-    return <div style={{ width: "100%", height: "400px" }}>
-        <Line data={chartData} options={options} />
-    </div>;
+    return (
+        <div style={{ width: '100%', height: '100%' }}>
+            <Line data={chartData} options={options} />
+        </div>
+    );
 };
-
-// Usage in App
-// export default function App() {
-//   return <ChartComponent data={sampleData} />;
-// }
