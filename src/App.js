@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router';
 import { AuthProvider } from './hocs/auth';
+import { ChannelProvider } from './hocs/channel'; // Import ChannelProvider
 
 import styled from 'styled-components';
 import Header from './components/Header';
@@ -44,14 +45,16 @@ const MainContainer = styled.div`
 const Layout = () => {
     return (
         <AuthProvider>
-            <LayoutContainer>
-                {/* Header is always present */}
-                <Header />
-                <MainContainer>
-                    <Outlet /> {/* This renders the current route's component */}
-                </MainContainer>
-                <Footer />
-            </LayoutContainer>
+            <ChannelProvider>
+                <LayoutContainer>
+                    {/* Header is always present */}
+                    <Header />
+                    <MainContainer>
+                        <Outlet /> {/* This renders the current route's component */}
+                    </MainContainer>
+                    <Footer />
+                </LayoutContainer>
+            </ChannelProvider>
         </AuthProvider>
     );
 };
@@ -60,7 +63,8 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route element={<Layout />}>
+                {/* Wrap the Layout route with ChannelProvider */}
+                <Route path={PageNames.APP} element={<Layout />}>
                     {tabList.map((tab) => (
                         <Route key={tab.href} path={tab.href} element={<tab.comp />} />
                     ))}

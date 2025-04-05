@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-
+import { useLocation, useNavigate } from 'react-router'; // Add router hooks
 import styled from 'styled-components';
+import { useChannel } from 'hocs/channel'; // Add channel hook
 
-import ChannelList from '../components/Channels/ChannelList';
-import ChannelData from '../components/Channels/ChannelData';
-
-import { listChannels } from 'services/backend';
+import Loader from 'components/Loader'; // Add Loader
+import ChannelList from 'components/Channels/ChannelList';
+import ChannelData from 'components/Channels/ChannelData';
 
 const Container = styled.div`
     display: grid;
@@ -18,6 +18,14 @@ const Container = styled.div`
     background-color: #f0f0f0; /* Just for visibility */
 `;
 
+const LoaderContainer = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-column: 1 / -1; /* Span all columns */
+    grid-row: 1 / -1; /* Span all rows */
+`;
+
 const AnalyticsContainer = styled.div`
     grid-area: analytics;
 `;
@@ -28,21 +36,56 @@ const ChannelListContainer = styled.div`
 `;
 
 const ChannelsView = () => {
-    const [channels, setChannels] = useState([]);
+    // Use channel context
+    const { channels, loadingChannels, errorChannels, fetchChannels } = useChannel();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Keep local state for highlighted channel
     const [highlightedChannel, setHighlightedChannel] = useState(null);
 
+    // Effect to handle refresh parameter
     useEffect(() => {
-        listChannels().then((res) => {
-            console.log('returned channels', res);
+        const params = new URLSearchParams(location.search);
+        if (params.get('refresh') === 'true') {
+            console.log('Refresh detected, fetching channels...');
+            fetchChannels();
+            // Remove the query parameter from the URL without reloading
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.search, fetchChannels, navigate]);
 
-            setChannels(res.data);
-            if (res.data.length > 0) setHighlightedChannel(res.data[0]);
-        });
-    }, []);
-
+    // Effect to set default highlighted channel when channels load/change
     useEffect(() => {
-        console.log('selected channel', highlightedChannel);
-    }, [highlightedChannel]);
+        // Set highlighted channel only if channels exist and none is highlighted yet,
+        // or if the currently highlighted one is no longer in the list
+        if (
+            channels &&
+            channels.length > 0 &&
+            (!highlightedChannel || !channels.some((c) => c.id === highlightedChannel.id))
+        ) {
+            console.log('Setting default highlighted channel:', channels[0]);
+            setHighlightedChannel(channels[0]);
+        } else if (channels && channels.length === 0) {
+            // Clear highlight if no channels
+            setHighlightedChannel(null);
+        }
+        // Dependency on channels array content requires careful stringification or length check
+    }, [channels, highlightedChannel]); // Rerun when channels array changes
+
+    if (loadingChannels) {
+        return (
+            <Container>
+                <LoaderContainer>
+                    <Loader />
+                </LoaderContainer>
+            </Container>
+        ); // Show loader while fetching
+    }
+
+    if (errorChannels) {
+        return <div>Error loading channels: {errorChannels.message}</div>; // Show error
+    }
 
     return (
         <Container>
@@ -51,7 +94,7 @@ const ChannelsView = () => {
             </AnalyticsContainer>
             <ChannelListContainer>
                 <ChannelList
-                    channels={channels}
+                    channels={channels} // Pass channels from context
                     onSelectChannel={setHighlightedChannel}
                     highlightedChannel={highlightedChannel}
                 />

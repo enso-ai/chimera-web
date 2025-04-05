@@ -1,6 +1,8 @@
 export function formatNumber(num, decimals = 1) {
-    if (num === null || num === undefined) return "N/A";
-
+    if (num === null || num === undefined || num === 'N/A' || isNaN(num)) return "N/A";
+    
+    // Ensure num is treated as a number
+    num = Number(num);
     if (num < 1000) return num.toString();
 
     const units = ["K", "M", "B", "T"];

@@ -24,6 +24,27 @@ const TitleRow = styled.div`
     align-items: center;
 `;
 
+const EmptyStateContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+`;
+
+const EmptyStateMsg = styled.h3`
+    color: #444;
+    font-size: 24px;
+    font-weight: 400;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    width: 100%;
+`;
+
 const ChannelTitle = styled.a`
     decoration: none;
     font-size: 32px;
@@ -87,9 +108,9 @@ const StatsChartContainer = styled.div``;
 const STATS_KEYS = ['follower_count', 'likes_count', 'video_count', 'view_count', 'comment_count'];
 
 export default function ChannelDataView({ channel }) {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [statsData, setStatsData] = useState({});
+    const [statsData, setStatsData] = useState([]);
 
     const inputRef = useRef(null);
 
@@ -130,6 +151,13 @@ export default function ChannelDataView({ channel }) {
             <Container>
                 <LoadingSpinner />
             </Container>
+        );
+
+    if (!channel)
+        return (
+            <EmptyStateContainer>
+                <EmptyStateMsg>Channel Data is empty, please add your channel!</EmptyStateMsg>
+            </EmptyStateContainer>
         );
 
     return (

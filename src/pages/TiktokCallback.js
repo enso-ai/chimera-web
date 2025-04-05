@@ -28,7 +28,12 @@ export default function TiktokCallback() {
 
         verifyTiktokToken(code).then((data) => {
             console.log("print data", data);
-            navigate('/channels');
+            // Navigate to channels tab with refresh parameter
+            navigate('/app/channels?refresh=true');
+        }).catch(error => {
+            // Add basic error handling for the verification call
+            console.error("Error verifying TikTok token:", error);
+            setDisplayText(`Error verifying token: ${error.message || 'Unknown error'}`);
         });
 
 

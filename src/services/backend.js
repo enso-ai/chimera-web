@@ -38,8 +38,12 @@ export const listChannels = async () => {
     return response.data;
 };
 
-export const getTotalStats = async () => {
-    const response = await api.get('channels/stats');
+export const getTotalStats = async (period = 'now') => {
+    const response = await api.get('channels/stats', {
+        params: {
+            period
+        }
+    });
     return response.data;
 };
 
