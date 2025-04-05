@@ -1,17 +1,18 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router';
-import { AuthProvider } from './hocs/auth';
-import { ChannelProvider } from './hocs/channel'; // Import ChannelProvider
+import { Navigate } from 'react-router';
+import { AuthProvider } from 'hocs/auth';
+import { ChannelProvider } from 'hocs/channel'; // Import ChannelProvider
 
 import styled from 'styled-components';
-import Header from './components/Header';
+import Header from 'components/Header';
 
-import { tabList } from './Tabs';
+import { tabList } from 'Tabs';
 import TiktokCallback from 'pages/TiktokCallback';
 import TermsOfService from 'pages/TermsOfService';
 import PrivacyPolicy from 'pages/PrivacyPolicy';
 import Signin from 'pages/SignIn';
 import Footer from 'components/Footer';
-import { PageNames } from './constants';
+import { PageNames } from 'constants';
 
 const LayoutContainer = styled.div`
     width: 100vw;
@@ -64,6 +65,7 @@ function App() {
         <BrowserRouter>
             <Routes>
                 {/* Wrap the Layout route with ChannelProvider */}
+                <Route path='/' element={<Navigate to='/app/dashboard' replace />} />
                 <Route path={PageNames.APP} element={<Layout />}>
                     {tabList.map((tab) => (
                         <Route key={tab.href} path={tab.href} element={<tab.comp />} />
