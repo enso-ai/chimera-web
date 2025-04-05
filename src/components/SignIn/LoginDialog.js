@@ -124,7 +124,7 @@ export default function LoginDialog() {
                 response = await signup(username, password);
             }
             console.log('user signed in:', response);
-            navigate('/dashboard');
+            navigate('/app/dashboard');
         } catch (err) {
             console.log('error: ', err);
             if (err.message === 'No Authorization') {
