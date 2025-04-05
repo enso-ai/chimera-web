@@ -1,9 +1,12 @@
 import axios from 'axios';
 
-const BASE_URL =
-    process.env.REACT_APP_STAGE == 'prod'
-        ? 'https://tiktok-backend.v01s.com/api/v1/'
-        : 'http://127.0.0.1:8000/api/v1/';
+const LOCAL_URL = 'http://127.0.0.1:8000/api/v1/';
+const BASE_URL_MAP = {
+    prod: 'https://tiktok-backend.v01s.com/api/v1/',
+    staging: LOCAL_URL, // will change to remote staging url once it's available
+};
+
+const BASE_URL = BASE_URL_MAP[process.env.REACT_APP_STAGE] || LOCAL_URL;
 
 // Create axios instance with base URL
 const api = axios.create({
