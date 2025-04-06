@@ -1,5 +1,5 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { listChannels, getTotalStats } from 'services/backend';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
+import { listChannels, getTotalStats, getChannelStats } from 'services/backend';
 import { useAuth } from 'hocs/auth';
 
 const INITIAL_FETCH_PERIOD = 'quarter'; // initial fetch period for historical stats
@@ -9,11 +9,12 @@ const ChannelContext = createContext();
 export const ChannelProvider = ({ children }) => {
     const { user } = useAuth();
     const [channels, setChannels] = useState([]);
+    const channelStatsMap = useRef({}); // Map to store channel stats by ID
     // Stats for the top cards (latest data)
     const [latestStats, setLatestStats] = useState([]);
     const [loadingLatestStats, setLoadingLatestStats] = useState(true);
     const [errorLatestStats, setErrorLatestStats] = useState(null);
-    
+
     // Stats for the chart (historical data)
     const [historicalStats, setHistoricalStats] = useState([]);
     const [hasAllTimeData, setHasAllTimeData] = useState(false); // Track if we've fetched all data
@@ -22,7 +23,7 @@ export const ChannelProvider = ({ children }) => {
     const [loadingHistoricalStats, setLoadingHistoricalStats] = useState(true);
     const [errorHistoricalStats, setErrorHistoricalStats] = useState(null);
 
-    const fetchChannels = useCallback(async () => {
+    const fetchChannels = async () => {
         console.log('Fetching channels...');
         setLoadingChannels(true);
         setErrorChannels(null);
@@ -37,10 +38,10 @@ export const ChannelProvider = ({ children }) => {
         } finally {
             setLoadingChannels(false);
         }
-    }, []);
+    };
 
     // Fetch latest stats (for cards)
-    const fetchLatestStats = useCallback(async () => {
+    const fetchLatestStats = async () => {
         console.log('Fetching latest stats...');
         setLoadingLatestStats(true);
         setErrorLatestStats(null);
@@ -55,21 +56,21 @@ export const ChannelProvider = ({ children }) => {
         } finally {
             setLoadingLatestStats(false);
         }
-    }, []);
-    
+    };
+
     // Fetch historical stats (for chart)
-    const fetchHistoricalStats = async (period, forceFetch=false) => {
+    const fetchHistoricalStats = async (period, forceFetch = false) => {
         // Optimize API calls
         if (period === 'all' && hasAllTimeData) {
             // If we already have all-time data, skip
             return;
         }
-        
+
         // Only make an API call when:
         // 1. It's the first load
         // 2. User explicitly selects 'all' and we don't have all data yet
         const shouldFetch = (period === 'all' && !hasAllTimeData) || forceFetch;
-        
+
         if (!shouldFetch) {
             console.log(`Skipping fetch for period: ${period}`);
             return;
@@ -78,12 +79,12 @@ export const ChannelProvider = ({ children }) => {
         console.log(`Fetching historical stats for period: ${period}...`);
         setLoadingHistoricalStats(true);
         setErrorHistoricalStats(null);
-        
+
         try {
             const data = await getTotalStats(period);
             console.log('Historical stats fetched:', data);
             setHistoricalStats(data || []);
-            
+
             // If we successfully fetched all data, mark it
             if (period === 'all') {
                 setHasAllTimeData(true);
@@ -98,6 +99,36 @@ export const ChannelProvider = ({ children }) => {
         }
     };
 
+    const fetchChannelHistoricalStats = async (channel_id, force = false) => {
+        if (!force && channelStatsMap.current[channel_id]) {
+            console.log(`Using cached historical stats for channel: ${channel_id}`);
+        } else {
+            console.log(`Fetching historical stats for channel: ${channel_id}...`);
+            try {
+                const data = await getChannelStats(channel_id);
+                console.log('Channel historical stats fetched:', data);
+                channelStatsMap.current[channel_id] = data || [];
+            } catch (error) {
+                console.error('Error fetching channel historical stats:', error);
+                return [];
+            }
+        }
+        return channelStatsMap.current[channel_id];
+    };
+
+    const refreshAllData = async () => {
+        console.log('Refreshing data...');
+        await fetchChannels();
+        fetchLatestStats();
+        fetchHistoricalStats(INITIAL_FETCH_PERIOD, true);
+    };
+
+    const refreshStats = async () => {
+        console.log('Refreshing stats...');
+        fetchLatestStats();
+        fetchHistoricalStats(INITIAL_FETCH_PERIOD, true); // Fetch quarter data on refresh
+    };
+
     // Initial fetch on mount - get both latest and historical stats
     useEffect(() => {
         if (user && user.id) {
@@ -107,7 +138,7 @@ export const ChannelProvider = ({ children }) => {
             fetchHistoricalStats(INITIAL_FETCH_PERIOD, true); // Fetch quarter data on first load
         }
     }, [user]);
-    
+
     const value = {
         channels,
         latestStats,
@@ -118,9 +149,11 @@ export const ChannelProvider = ({ children }) => {
         errorLatestStats,
         loadingHistoricalStats,
         errorHistoricalStats,
-        fetchChannels,
+        refreshAllData,
+        refreshStats,
         fetchLatestStats,
         fetchHistoricalStats,
+        fetchChannelHistoricalStats,
     };
 
     return <ChannelContext.Provider value={value}>{children}</ChannelContext.Provider>;

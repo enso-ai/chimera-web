@@ -9,22 +9,15 @@ import { formatNumber } from 'utils/numbers';
 
 const Container = styled.div`
     position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: start;
+    height: calc(100% - 40px);
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    grid-template-columns: auto 1fr auto;
 
     padding: 20px;
     gap: 20px;
 
     overflow: hidden;
-`;
-
-const TitleRow = styled.div`
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
 `;
 
 const EmptyStateContainer = styled.div`
@@ -52,6 +45,15 @@ const ChannelTitle = styled.a`
     decoration: none;
     font-size: 32px;
     color: #444;
+
+    grid-column: 1 / 2;
+`;
+
+const ImportGroup = styled.div`
+    display: flex;
+    flex-direction: row;
+
+    grid-column: 3 / 4;
 `;
 
 const ImportButton = styled.button`
@@ -77,6 +79,9 @@ const StatsRow = styled.div`
     align-items: center;
 
     gap: 10px;
+
+    grid-row: 2 / 3;
+    grid-column: 1 / 4;
 `;
 
 const StatsCardContainer = styled.div`
@@ -107,10 +112,11 @@ const StatsCardCount = styled.div`
 `;
 
 const StatsChartContainer = styled.div`
-    flex: 1;
-    min-height: 0;
+    position: relative;
+    grid-column: 1 / 4;
+    grid-row: 3 / 4;
 
-    border: 1px solid blue;
+    overflow: hidden;
 `;
 
 const statsKeys = ['follower_count', 'video_count', 'view_count', 'likes_count', 'comment_count'];
@@ -174,13 +180,13 @@ export default function ChannelDataView({ channel }) {
 
     return (
         <Container>
-            <TitleRow>
-                <ChannelTitle>{channel?.display_name}</ChannelTitle>
+            <ChannelTitle>{channel?.display_name}</ChannelTitle>
+            <ImportGroup>
                 <ImportButton onClick={handleUploadClicked} disabled={uploading}>
                     {uploading ? 'Uploading...' : 'Import History'}
                 </ImportButton>
                 <FileInput ref={inputRef} type='file' accept='.csv' onChange={handleFileChange} />
-            </TitleRow>
+            </ImportGroup>
             <StatsRow>
                 {statsKeys.map((key) => (
                     <StatsCardContainer key={key}>

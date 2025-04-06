@@ -164,25 +164,28 @@ export default function Dashboard() {
         if (selectedPeriod === 'all') return historicalStats;
 
         const now = new Date();
-        let cutoffDate;
+        // Create a UTC date with hours, minutes, and seconds set to 0
+        const nowUtc = new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0)
+        );
+        let cutoffDate = new Date(nowUtc);
 
         switch (selectedPeriod) {
             case 'week':
-                cutoffDate = new Date(now);
-                cutoffDate.setDate(now.getDate() - 7);
+                cutoffDate.setUTCDate(nowUtc.getUTCDate() - 7);
                 break;
             case 'month':
-                cutoffDate = new Date(now);
-                cutoffDate.setDate(now.getDate() - 30);
+                cutoffDate.setUTCDate(nowUtc.getUTCDate() - 30);
                 break;
             case 'quarter':
-                cutoffDate = new Date(now);
-                cutoffDate.setDate(now.getDate() - 90);
+                cutoffDate.setUTCDate(nowUtc.getUTCDate() - 90);
                 break;
             default:
                 return historicalStats;
         }
 
+        // the final result might skip for today if it's not ready in the backend
+        // os if the period is 'week', it might show either 6 or 7 days of date
         return historicalStats.filter((stat) => new Date(stat.date) >= cutoffDate);
     }, [historicalStats, selectedPeriod]);
 

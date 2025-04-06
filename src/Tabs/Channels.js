@@ -13,6 +13,7 @@ const Container = styled.div`
     height: 100%;
     overflow: hidden;
     grid-template-areas: 'analytics accounts';
+    grid-template-rows: 1fr;
     grid-template-columns: 1fr minmax(0, min(25%, 300px));
 
     background-color: #f0f0f0; /* Just for visibility */
@@ -26,10 +27,6 @@ const LoaderContainer = styled.div`
     grid-row: 1 / -1; /* Span all rows */
 `;
 
-const AnalyticsContainer = styled.div`
-    grid-area: analytics;
-`;
-
 const ChannelListContainer = styled.div`
     grid-area: accounts;
     border-left: 3px solid #9a9a9a;
@@ -37,7 +34,7 @@ const ChannelListContainer = styled.div`
 
 const ChannelsView = () => {
     // Use channel context
-    const { channels, loadingChannels, errorChannels, fetchChannels } = useChannel();
+    const { channels, loadingChannels, errorChannels, refreshAllData } = useChannel();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -49,11 +46,11 @@ const ChannelsView = () => {
         const params = new URLSearchParams(location.search);
         if (params.get('refresh') === 'true') {
             console.log('Refresh detected, fetching channels...');
-            fetchChannels();
+            refreshAllData(); // Call refreshStats to fetch channels and stats
             // Remove the query parameter from the URL without reloading
             navigate(location.pathname, { replace: true });
         }
-    }, [location.search, fetchChannels, navigate]);
+    }, [location.search, refreshAllData, navigate]);
 
     // Effect to set default highlighted channel when channels load/change
     useEffect(() => {
@@ -89,9 +86,7 @@ const ChannelsView = () => {
 
     return (
         <Container>
-            <AnalyticsContainer>
-                <ChannelData channel={highlightedChannel} />
-            </AnalyticsContainer>
+            <ChannelData channel={highlightedChannel} />
             <ChannelListContainer>
                 <ChannelList
                     channels={channels} // Pass channels from context

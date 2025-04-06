@@ -43,7 +43,9 @@ api.interceptors.response.use(
         const errorMessage = error.response?.data?.detail || 
                            error.message || 
                            'Request failed';
-        return Promise.reject(new Error(errorMessage));
+        const err = new Error(errorMessage);
+        err.code = error.response?.status;
+        return Promise.reject(err);
     }
 );
 
