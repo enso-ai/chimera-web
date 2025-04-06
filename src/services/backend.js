@@ -61,12 +61,20 @@ export const backfill_stats = async (channelId, file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await api.post(`channels/${channelId}/stats/backfill`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-    return response.data;
+    try {
+        const response = await api.post(`channels/${channelId}/stats/backfill`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        if (error.code === 400) {
+            console.error('Error uploading file:', error.message);
+            alert('Failed to import data: \nInvalid file format or content');
+            return null;
+        }
+    }
 };
 
 // developer endpoints, import/export db
