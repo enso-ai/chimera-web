@@ -3,17 +3,20 @@ import styled from 'styled-components';
 
 import LoadingSpinner from 'components/Loader';
 import ChartComponent from 'components/Chart';
-import { getChannelStats, getChannelVideos, backfill_stats } from 'services/backend';
+import { backfill_stats } from 'services/backend';
+import { useChannel } from 'hocs/channel';
 import { formatNumber } from 'utils/numbers';
 
 const Container = styled.div`
-    height: 100%;
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: start;
 
     padding: 20px;
     gap: 20px;
+
+    overflow: hidden;
 `;
 
 const TitleRow = styled.div`
@@ -103,11 +106,17 @@ const StatsCardCount = styled.div`
     text-align: right;
 `;
 
-const StatsChartContainer = styled.div``;
+const StatsChartContainer = styled.div`
+    flex: 1;
+    min-height: 0;
 
-const STATS_KEYS = ['follower_count', 'likes_count', 'video_count', 'view_count', 'comment_count'];
+    border: 1px solid blue;
+`;
+
+const statsKeys = ['follower_count', 'video_count', 'view_count', 'likes_count', 'comment_count'];
 
 export default function ChannelDataView({ channel }) {
+    const { refreshStats, fetchChannelHistoricalStats } = useChannel();
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [statsData, setStatsData] = useState([]);
@@ -119,13 +128,16 @@ export default function ChannelDataView({ channel }) {
         // fetch data from backend
         if (!channel?.id) return;
         setLoading(true);
-        getChannelStats(channel.id)
+        fetchChannelHistoricalStats(channel.id)
             .then((res) => {
-                console.log('returned stats', res);
                 setStatsData(res);
             })
             .finally(() => setLoading(false));
     }, [channel]);
+
+    useEffect(() => {
+        console.log('ChannelDate component show stats:', statsData);
+    }, [statsData]);
 
     const handleUploadClicked = () => {
         if (inputRef.current) inputRef.current.click();
@@ -137,10 +149,10 @@ export default function ChannelDataView({ channel }) {
         if (!file) return;
 
         try {
-            backfill_stats(channel.id, file);
+            await backfill_stats(channel.id, file);
+            await refreshStats();
         } catch (error) {
-            console.error('Upload failed:', error);
-            alert('Failed to import data');
+            console.error('failed to backfill stats', error);
         } finally {
             setUploading(false);
         }
@@ -170,7 +182,7 @@ export default function ChannelDataView({ channel }) {
                 <FileInput ref={inputRef} type='file' accept='.csv' onChange={handleFileChange} />
             </TitleRow>
             <StatsRow>
-                {STATS_KEYS.map((key) => (
+                {statsKeys.map((key) => (
                     <StatsCardContainer key={key}>
                         <StatsCardTitle>{key.split('_')[0]}</StatsCardTitle>
                         <StatsCardCount>{formatNumber(statsData[0]?.[key])}</StatsCardCount>
@@ -178,7 +190,12 @@ export default function ChannelDataView({ channel }) {
                 ))}
             </StatsRow>
             <StatsChartContainer>
-                <ChartComponent data={[...statsData].reverse()} />
+                <ChartComponent
+                    data={statsData.map((item) => ({
+                        views: item.view_count,
+                        date: item.date,
+                    }))}
+                />
             </StatsChartContainer>
         </Container>
     );
