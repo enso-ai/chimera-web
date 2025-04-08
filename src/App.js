@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router';
-import { Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router';
 import { AuthProvider } from 'hocs/auth';
-import { ChannelProvider } from 'hocs/channel'; // Import ChannelProvider
+import { ChannelProvider } from 'hocs/channel';
+import { QueueProvider } from 'hocs/queue';
 
 import styled from 'styled-components';
 import Header from 'components/Header';
@@ -47,14 +47,16 @@ const Layout = () => {
     return (
         <AuthProvider>
             <ChannelProvider>
-                <LayoutContainer>
-                    {/* Header is always present */}
-                    <Header />
-                    <MainContainer>
-                        <Outlet /> {/* This renders the current route's component */}
-                    </MainContainer>
-                    <Footer />
-                </LayoutContainer>
+                <QueueProvider>
+                    <LayoutContainer>
+                        {/* Header is always present */}
+                        <Header />
+                        <MainContainer>
+                            <Outlet />
+                        </MainContainer>
+                        <Footer />
+                    </LayoutContainer>
+                </QueueProvider>
             </ChannelProvider>
         </AuthProvider>
     );
@@ -64,7 +66,6 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Wrap the Layout route with ChannelProvider */}
                 <Route path='/' element={<Navigate to='/app/dashboard' replace />} />
                 <Route path={PageNames.APP} element={<Layout />}>
                     {tabList.map((tab) => (

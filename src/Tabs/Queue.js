@@ -1,8 +1,9 @@
 import { styled } from 'styled-components';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useChannel } from 'hocs/channel';
-import { listAssets } from 'services/backend';
+import { useQueue } from 'hocs/queue';
 import PostMenu from 'components/Queue/PostMenu';
+import ChannelQueueList from 'components/Queue/ChannelQueueList';
 
 const Container = styled.div`
     display: grid;
@@ -19,38 +20,6 @@ const AssetContainer = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-`;
-
-const AssetList = styled.div`
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 20px;
-    margin-bottom: 20px;
-    overflow-y: auto;
-`;
-
-const AssetCard = styled.div`
-    width: 100px;
-    height: 100px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: ${(props) => (props.selected ? '3px solid #4CCF50' : '3px solid #9a9a9a')};
-    transition: border-color 0.2s ease;
-    overflow: hidden;
-    position: relative;
-    margin: 0 auto;
-`;
-
-const AssetThumbnail = styled.img`
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    select: none;
-    draggable: false;
 `;
 
 const UploadButtonRow = styled.div`
@@ -113,30 +82,21 @@ const ChannelLabel = styled.p`
     user-select: none;
 `;
 
-const AssetItem = ({ asset, selected, onClick }) => {
-    return (
-        <AssetCard selected={selected} onClick={onClick}>
-            <AssetThumbnail src={asset.thumbnail_url} alt='Asset thumbnail' />
-        </AssetCard>
-    );
-};
-
 const AssetsView = () => {
     const { channels } = useChannel();
-    const [assets, setAssets] = useState([]);
+    // const [assets, setAssets] = useState([]); // State now managed by context
     const [highlightedChannel, setHighlightedChannel] = useState(null);
-    const [selectedAsset, setSelectedAsset] = useState(null);
     const [showPostMenu, setShowPostMenu] = useState(false);
 
-    useEffect(() => {
-        if (highlightedChannel) {
-            // todo pull assets until all assets are exhibited
-            listAssets(1, 10, highlightedChannel.id).then((res) => {
-                console.log('Assets:', res);
-                setAssets(res.items);
-            });
-        }
-    }, [highlightedChannel]);
+    // Get queue state and refresh function for the highlighted channel
+    const {
+        assets,
+        isLoading, // Can use this to show loading indicators
+        error, // Can use this to show error messages
+        refreshQueue,
+    } = useQueue(highlightedChannel?.id); // Use the context hook
+
+    // No need for the useEffect that called refreshAssets, useQueue handles initial fetch
 
     useEffect(() => {
         if (channels && channels.length > 0) {
@@ -148,32 +108,32 @@ const AssetsView = () => {
         setHighlightedChannel(channel);
     };
 
-    const handleAssetClick = (asset) => {
-        setSelectedAsset(selectedAsset?.id === asset.id ? null : asset);
-    };
-
-    const handleAddAsset = async (video) => {
-        // update the asset list after adding a new asset
-        // should do this smartly, e.g if the newly pulled
-        // exists in the list, stop pulling. otherwise, keep
-        // pulling until it's exhibited
-    }
+    // handleAddAsset is called by PostMenu on success.
+    // PostMenu will now call refreshQueue directly via the hook.
+    // We still need a function to pass to PostMenu's onSuccess prop,
+    // but it might not need to do anything here if PostMenu handles the refresh.
+    // Let's keep it simple for now and let PostMenu handle the refresh.
+    const handleAddAssetSuccess = useCallback(() => {
+        // No action needed here anymore, PostMenu will trigger refresh via useQueue.
+        console.log('Asset upload process completed in PostMenu.');
+    }, []);
 
     return (
         <Container>
             <AssetContainer>
-                <AssetList>
-                    {assets.map((asset) => (
-                        <AssetItem
-                            key={asset.id}
-                            asset={asset}
-                            selected={selectedAsset?.id === asset.id}
-                            onClick={() => handleAssetClick(asset)}
-                        />
-                    ))}
-                </AssetList>
+                {/* Pass only the assets for the selected channel */}
+                {/* Remove handler props */}
+                <ChannelQueueList
+                    assets={assets}
+                    channelId={highlightedChannel?.id} // Pass channelId for FileAsset hook
+                    isLoading={isLoading}
+                    error={error}
+                />
                 <UploadButtonRow>
-                    <ActionButton onClick={() => setShowPostMenu(true)} disabled={!highlightedChannel}>
+                    <ActionButton
+                        onClick={() => setShowPostMenu(true)}
+                        disabled={!highlightedChannel || !highlightedChannel.id || isLoading}
+                    >
                         <ButtonText>Upload</ButtonText>
                     </ActionButton>
                 </UploadButtonRow>
@@ -198,7 +158,7 @@ const AssetsView = () => {
                 <PostMenu
                     channel={highlightedChannel}
                     onClose={() => setShowPostMenu(false)}
-                    onSuccess={handleAddAsset}
+                    onSuccess={handleAddAssetSuccess} // Pass the simplified handler
                 />
             )}
         </Container>

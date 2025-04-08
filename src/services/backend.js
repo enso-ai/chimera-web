@@ -139,8 +139,8 @@ export const getAssetDetails = async (objectKey) => {
     return response.data;
 };
 
-export const updateAsset = async (objectKey, extra) => {
-    const response = await api.patch(`assets/${objectKey}`, { extra });
+export const updateAsset = async (objectKey, payload) => {
+    const response = await api.patch(`assets/${objectKey}`, payload);
     return response.data;
 };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { styled } from 'styled-components';
 import { getSignedUrl, processAsset } from 'services/backend';
+import { useQueue } from 'hocs/queue'; // Import the context hook
 import FileDropZone from './FileDropZone';
 import FileList from './FileList';
 
@@ -107,7 +108,8 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [jobDone, setJobDone] = useState(false);
     const fileMapRef = useRef(new Map());
-    
+    const { refreshQueue } = useQueue(channel?.id); // Get refresh function from context
+
     useEffect(() => {
         const handleBeforeUnload = (e) => {
             if (isUploading) {
@@ -202,8 +204,10 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
             
             // Complete
             updateFileStatus(fileItem.id, { status: 'complete', progress: 100 });
-            onSuccess(object_key);
-            
+            // onSuccess(object_key); // Call the original onSuccess prop passed from Queue.js
+            // No need to call refreshQueue here directly, as it will be triggered
+            // when the last file finishes processing below.
+
         } catch (error) {
             console.error('Error uploading file:', error);
             updateFileStatus(fileItem.id, {
@@ -217,9 +221,18 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
     const processNextInQueue = async () => {
         // Get next waiting file
         const nextFile = files.find(f => f.status === 'waiting');
-        
+
         if (!nextFile) {
-            setJobDone(true);
+            // Check if all files are processed (complete or error)
+            const allProcessed = files.every(f => f.status === 'complete' || f.status === 'error');
+            if (allProcessed && files.length > 0) {
+                 // All uploads finished, trigger refresh for the channel
+                 if (channel?.id) {
+                    refreshQueue(); // Refresh the queue via context hook
+                 }
+                 setJobDone(true); // Mark job as done
+                 onSuccess(); // Call the original success handler from Queue.js
+            }
             return;
         }
 
