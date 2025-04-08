@@ -18,7 +18,7 @@ const Container = styled.div`
     height: 100%;
     display: grid;
     grid-template-rows: auto 1fr;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 20px;
 `;
 
@@ -82,7 +82,7 @@ const ErrorMessage = styled.div`
 const StatsChartContainer = styled.div`
     position: relative;
     background: #f0f0f0;
-    grid-column: 1 / span 5;
+    grid-column: 1 / -1;
     grid-row: 2;
     border-radius: 20px;
     padding: 20px;
@@ -117,7 +117,7 @@ const StatsCard = ({ title, count }) => {
 };
 
 export default function Dashboard() {
-    const statsKeys = ['follower', 'videos', 'views', 'likes', 'comments'];
+    const statsKeys = ['channels', 'follower', 'videos', 'views', 'likes', 'comments'];
     const [selectedPeriod, setSelectedPeriod] = useState('week');
     const {
         latestStats,
