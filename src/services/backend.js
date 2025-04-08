@@ -101,3 +101,52 @@ export const getCurrentUser = async () => {
     const response = await api.get('auth/me');
     return response.data;
 };
+
+// Asset management functions
+export const getSignedUrl = async (channelId, title) => {
+    const response = await api.post('assets/signed_url', {
+        channel_id: channelId,
+        title
+    });
+    return response.data;
+};
+
+export const processAsset = async (objectKey) => {
+    const response = await api.post('assets/process', { object_key: objectKey });
+    return response.data;
+};
+
+export const listAssets = async (page = 1, size = 10, channelId) => {
+    const response = await api.get('assets/videos', {
+        params: {
+            page,
+            size,
+            channel_id: channelId
+        }
+    });
+    return response.data;
+};
+
+export const deleteAssets = async (objectKeys) => {
+    const response = await api.delete('assets/', {
+        data: objectKeys
+    });
+    return response.data;
+};
+
+export const getAssetDetails = async (objectKey) => {
+    const response = await api.get(`assets/${objectKey}`);
+    return response.data;
+};
+
+export const updateAsset = async (objectKey, extra) => {
+    const response = await api.patch(`assets/${objectKey}`, { extra });
+    return response.data;
+};
+
+export const postAsset = async (fileId) => {
+    const response = await api.post('assets/post', {
+        id: fileId
+    });
+    return response.data;
+};
