@@ -82,7 +82,6 @@ export const ChannelProvider = ({ children }) => {
 
         try {
             const data = await getTotalStats(period);
-            console.log('Historical stats fetched:', data);
             setHistoricalStats(data || []);
 
             // If we successfully fetched all data, mark it
