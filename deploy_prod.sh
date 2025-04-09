@@ -1,5 +1,5 @@
 echo Building...
-REACT_APP_STAGE='prod' npm run build
+npm run build:prod
 
 echo Deploying...
 aws s3 sync build/ s3://tiktok-manager-prod/
