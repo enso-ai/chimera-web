@@ -14,6 +14,7 @@ import {
     processAsset,
     getPostStatus,
 } from 'services/backend';
+import { ASSET_STATUS, TERMINAL_STATES, LOCKED_STATES } from 'constants/assetStatus';
 
 const QueueContext = createContext();
 
@@ -332,7 +333,7 @@ export const QueueProvider = ({ children }) => {
                         attempts: newAttempts,
                     });
 
-                    if (status === 'posted' || status === 'posting_failed') {
+                    if (TERMINAL_STATES.includes(status)) {
                         // Terminal state reached
                         clearInterval(intervalId);
                         state.pollingPostStatus.delete(assetId);
@@ -391,7 +392,7 @@ export const QueueProvider = ({ children }) => {
                     type: actionTypes.SET_ASSET,
                     payload: {
                         channelId,
-                        asset: { ...originalAsset, id: assetId, status: 'posting' },
+                        asset: { ...originalAsset, id: assetId, status: ASSET_STATUS.POSTING },
                     },
                 });
                 startPollingPostStatus(channelId, assetId);
@@ -411,7 +412,7 @@ export const QueueProvider = ({ children }) => {
             if (isActionInProgress(actionKey)) return;
 
             const asset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
-            if (asset?.status === 'posting' || asset?.status === 'deleting') {
+            if (LOCKED_STATES.includes(asset?.status)) {
                 alert('Cannot delete video while it is being posted or deleted.');
                 return;
             }

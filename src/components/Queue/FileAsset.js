@@ -2,6 +2,7 @@ import { styled } from 'styled-components';
 import { useState, useEffect, useCallback } from 'react';
 import { useQueue } from 'hocs/queue';
 import { FiEdit, FiCheck, FiX, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
+import { ASSET_STATUS, STATUS_COLORS, FAILED_STATES, LOCKED_STATES } from 'constants/assetStatus';
 
 const Row = styled.div`
     display: grid;
@@ -60,18 +61,7 @@ const StatusIndicator = styled.div`
     align-items: center;
     gap: 4px;
     font-size: 14px;
-    color: ${props => {
-        switch (props.status) {
-            case 'processed': return '#4CCF50';
-            case 'uploaded': return '#FFA500';
-            case 'process_failed': return '#FF4444';
-            case 'posting_failed': return '#FF4444';
-            case 'posting': return '#2196F3';
-            case 'posted': return '#4CCF50';
-            case 'deleting': return '#FF9800';
-            default: return '#666666';
-        }
-    }};
+    color: ${props => STATUS_COLORS[props.status] || '#666666'};
 `;
 
 const LoadingSpinner = styled.span`
@@ -206,10 +196,10 @@ const FileAsset = ({ asset, channelId }) => {
                 </TitleSection>
                 <StatusSection>
                     <StatusIndicator status={asset.status}>
-                        {asset.status === 'posting' ? <LoadingSpinner /> : '●'}
-                        {asset.status === 'process_failed'
+                        {asset.status === ASSET_STATUS.POSTING ? <LoadingSpinner /> : '●'}
+                        {asset.status === ASSET_STATUS.PROCESS_FAILED
                             ? 'Processing Failed'
-                            : asset.status === 'posting_failed'
+                            : asset.status === ASSET_STATUS.POSTING_FAILED
                             ? 'Posting Failed'
                             : asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
                     </StatusIndicator>
@@ -219,7 +209,7 @@ const FileAsset = ({ asset, channelId }) => {
                 <IconButton
                     onClick={() => reprocessAsset(asset.id)}
                     disabled={
-                        !['process_failed', 'posting_failed'].includes(asset.status) ||
+                        !FAILED_STATES.includes(asset.status) ||
                         isActionInProgress(reprocessActionKey)
                     }
                     title='Reprocess'
@@ -229,7 +219,7 @@ const FileAsset = ({ asset, channelId }) => {
                 <IconButton
                     variant='primary'
                     onClick={() => postNow(asset.id)}
-                    disabled={asset.status !== 'processed' || isActionInProgress(postActionKey)}
+                    disabled={asset.status !== ASSET_STATUS.PROCESSED || isActionInProgress(postActionKey)}
                     title='Post Now'
                 >
                     {isActionInProgress(postActionKey) ? '...' : <FiSend size={18} />}
@@ -238,7 +228,7 @@ const FileAsset = ({ asset, channelId }) => {
                     variant='danger'
                     onClick={() => deleteAsset(asset.id)}
                     disabled={
-                        ['posting', 'deleting'].includes(asset.status) ||
+                        LOCKED_STATES.includes(asset.status) ||
                         isActionInProgress(deleteActionKey)
                     }
                     title='Delete'
