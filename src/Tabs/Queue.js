@@ -93,7 +93,6 @@ const AssetsView = () => {
         assets,
         isLoading, // Can use this to show loading indicators
         error, // Can use this to show error messages
-        refreshQueue,
     } = useQueue(highlightedChannel?.id); // Use the context hook
 
     // No need for the useEffect that called refreshAssets, useQueue handles initial fetch

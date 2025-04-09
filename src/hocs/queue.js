@@ -6,13 +6,21 @@ import React, {
     useCallback,
     useRef,
 } from 'react';
-import { listAssets, postAsset, updateAsset, deleteAssets, processAsset } from 'services/backend';
+import {
+    listAssets,
+    postAsset,
+    updateAsset,
+    deleteAssets,
+    processAsset,
+    getPostStatus,
+} from 'services/backend';
 
 const QueueContext = createContext();
 
 const initialState = {
     queues: {}, // { [channelId]: { assets: [], isLoading: false, isFullyLoaded: false, error: null, page: 1 } }
     actionsInProgress: new Set(), // Track ongoing API calls for specific assets (e.g., 'delete-assetId')
+    pollingPostStatus: new Map(), // Track active post status polling { assetId: { intervalId: number, attempts: number } }
 };
 
 const actionTypes = {
@@ -294,6 +302,77 @@ export const QueueProvider = ({ children }) => {
         [state.queues, isActionInProgress]
     );
 
+    const startPollingPostStatus = useCallback(
+        (channelId, assetId) => {
+            // Clear any existing polling for this asset
+            if (state.pollingPostStatus.has(assetId)) {
+                clearInterval(state.pollingPostStatus.get(assetId).intervalId);
+            }
+
+            const intervalId = setInterval(async () => {
+                const pollState = state.pollingPostStatus.get(assetId);
+                if (!pollState) return; // Polling was stopped
+
+                const newAttempts = pollState.attempts + 1;
+                if (newAttempts > 6) {
+                    // Stop polling after 6 attempts (30 seconds)
+                    clearInterval(intervalId);
+                    state.pollingPostStatus.delete(assetId);
+                    console.warn(`Polling timed out for asset ${assetId}`);
+                    return;
+                }
+
+                try {
+                    const response = await getPostStatus(assetId);
+                    const status = response.status;
+
+                    // Update polling attempts
+                    state.pollingPostStatus.set(assetId, {
+                        intervalId,
+                        attempts: newAttempts,
+                    });
+
+                    if (status === 'posted' || status === 'posting_failed') {
+                        // Terminal state reached
+                        clearInterval(intervalId);
+                        state.pollingPostStatus.delete(assetId);
+
+                        // Update asset status
+                        dispatch({
+                            type: actionTypes.SET_ASSET,
+                            payload: { channelId, asset: { id: assetId, status } },
+                        });
+                    }
+                } catch (error) {
+                    console.error('Failed to poll post status:', error);
+                    // Continue polling until max attempts reached
+                    state.pollingPostStatus.set(assetId, {
+                        intervalId,
+                        attempts: newAttempts,
+                    });
+                }
+            }, 5000); // Poll every 5 seconds
+
+            // Initialize polling state
+            state.pollingPostStatus.set(assetId, {
+                intervalId,
+                attempts: 0,
+            });
+        },
+        [state.pollingPostStatus, dispatch]
+    );
+
+    const stopPollingPostStatus = useCallback(
+        (assetId) => {
+            const pollState = state.pollingPostStatus.get(assetId);
+            if (pollState) {
+                clearInterval(pollState.intervalId);
+                state.pollingPostStatus.delete(assetId);
+            }
+        },
+        [state.pollingPostStatus]
+    );
+
     const handlePostNow = useCallback(
         async (channelId, assetId) => {
             const actionKey = `post-${assetId}`;
@@ -304,30 +383,26 @@ export const QueueProvider = ({ children }) => {
             }
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
             const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
-            // Optimistic update
-            dispatch({
-                type: actionTypes.SET_ASSET,
-                payload: { channelId, asset: { ...originalAsset, id: assetId, is_posted: true } },
-            });
 
             try {
                 await postAsset(assetId);
-                // Success - state already updated
+                // Update status to posting and start polling
+                dispatch({
+                    type: actionTypes.SET_ASSET,
+                    payload: {
+                        channelId,
+                        asset: { ...originalAsset, id: assetId, status: 'posting' },
+                    },
+                });
+                startPollingPostStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to post asset:', error);
                 alert('Failed to post video. Please try again.');
-                // Revert optimistic update on error
-                if (originalAsset) {
-                    dispatch({
-                        type: actionTypes.SET_ASSET,
-                        payload: { channelId, asset: originalAsset },
-                    });
-                }
             } finally {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress]
+        [state.queues, isActionInProgress, startPollingPostStatus]
     );
 
     const handleDeleteAsset = useCallback(
@@ -335,9 +410,19 @@ export const QueueProvider = ({ children }) => {
             const actionKey = `delete-${assetId}`;
             if (isActionInProgress(actionKey)) return;
 
+            const asset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
+            if (asset?.status === 'posting' || asset?.status === 'deleting') {
+                alert('Cannot delete video while it is being posted or deleted.');
+                return;
+            }
+
             if (!window.confirm('Are you sure you want to delete this video?')) {
                 return;
             }
+
+            // Stop any active polling
+            stopPollingPostStatus(assetId);
+
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
             const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
             // Optimistic update
@@ -351,7 +436,6 @@ export const QueueProvider = ({ children }) => {
                 alert('Failed to delete video. Please try again.');
                 // Revert optimistic update on error
                 if (originalAsset) {
-                    // Re-insert asset (might need better handling for order)
                     dispatch({
                         type: actionTypes.SET_ASSET,
                         payload: { channelId, asset: originalAsset },
@@ -361,7 +445,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress]
+        [state.queues, isActionInProgress, stopPollingPostStatus]
     );
 
     const handleReprocessAsset = useCallback(
@@ -391,9 +475,20 @@ export const QueueProvider = ({ children }) => {
         [refreshQueue, isActionInProgress]
     );
 
+    // Add cleanup effect for polling intervals
+    useEffect(() => {
+        return () => {
+            // Clean up all polling intervals on unmount
+            state.pollingPostStatus.forEach((pollState, assetId) => {
+                clearInterval(pollState.intervalId);
+            });
+            state.pollingPostStatus.clear();
+        };
+    }, [state.pollingPostStatus]);
+
     const value = {
         getQueueState,
-        fetchAllAssetsForChannel, // Expose for potential direct use if needed
+        fetchAllAssetsForChannel,
         refreshQueue,
         handleUpdateTitle,
         handlePostNow,

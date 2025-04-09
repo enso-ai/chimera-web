@@ -112,7 +112,7 @@ export const getSignedUrl = async (channelId, title) => {
 };
 
 export const processAsset = async (objectKey) => {
-    const response = await api.post('assets/process', { object_key: objectKey });
+    const response = await api.post(`assets/${objectKey}/process`);
     return response.data;
 };
 
@@ -145,8 +145,11 @@ export const updateAsset = async (objectKey, payload) => {
 };
 
 export const postAsset = async (fileId) => {
-    const response = await api.post('assets/post', {
-        id: fileId
-    });
+    const response = await api.post(`assets/${fileId}/post`);
+    return response.data;
+};
+
+export const getPostStatus = async (fileId) => {
+    const response = await api.get(`assets/${fileId}/post_status`);
     return response.data;
 };

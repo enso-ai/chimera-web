@@ -1,6 +1,7 @@
 import { styled } from 'styled-components';
 import { useState, useEffect, useCallback } from 'react';
 import { useQueue } from 'hocs/queue';
+import { FiEdit, FiCheck, FiX, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
 
 const Row = styled.div`
     display: grid;
@@ -15,7 +16,7 @@ const Row = styled.div`
 
 const Thumbnail = styled.img`
     width: 120px;
-    height: 67.5px; // 16:9 aspect ratio
+    height: 160px; // 3:4 aspect ratio for better vertical image display
     object-fit: cover;
     border-radius: 4px;
 `;
@@ -35,14 +36,14 @@ const TitleSection = styled.div`
 const Title = styled.input`
     font-size: 16px;
     padding: 4px 8px;
-    border: ${props => props.isEditing ? '1px solid #4CCF50' : '1px solid #ddd'};
+    border: ${(props) => (props.isEditing ? '1px solid #4CCF50' : '1px solid #ddd')};
     border-radius: 4px;
-    background: ${props => props.isEditing ? 'white' : '#f5f5f5'};
+    background: ${(props) => (props.isEditing ? 'white' : '#f0f0f0')};
     color: #333;
     width: 100%;
     decoration: underline;
     &:disabled {
-        background: transparent;
+        background: ${(props) => (props.isEditing ? 'white' : '#f0f0f0')};
         color: #666;
         cursor: default;
     }
@@ -63,18 +64,29 @@ const StatusIndicator = styled.div`
         switch (props.status) {
             case 'processed': return '#4CCF50';
             case 'uploaded': return '#FFA500';
-            case 'failed': return '#FF4444';
+            case 'process_failed': return '#FF4444';
+            case 'posting_failed': return '#FF4444';
+            case 'posting': return '#2196F3';
+            case 'posted': return '#4CCF50';
+            case 'deleting': return '#FF9800';
             default: return '#666666';
         }
     }};
 `;
 
-const PostedIndicator = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: ${props => props.isPosted ? '#4CCF50' : '#666'};
+const LoadingSpinner = styled.span`
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #2196F3;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 4px;
 `;
 
 const ActionButtons = styled.div`
@@ -104,14 +116,13 @@ const IconButton = styled.button`
     }
 `;
 
-// Renamed Component: FileAsset (formerly AssetRow)
-const FileAsset = ({ asset, channelId }) => { // Receive channelId, remove handler/editing props
+const FileAsset = ({ asset, channelId }) => {
     const {
         updateTitle,
         postNow,
         deleteAsset,
         reprocessAsset,
-        isActionInProgress // Get action status checker
+        isActionInProgress, // Get action status checker
     } = useQueue(channelId); // Use the hook with the passed channelId
 
     const [isEditing, setIsEditing] = useState(false); // Manage editing state locally
@@ -159,60 +170,80 @@ const FileAsset = ({ asset, channelId }) => { // Receive channelId, remove handl
                         onChange={(e) => setEditedTitle(e.target.value)}
                         disabled={!isEditing || isActionInProgress(updateActionKey)} // Disable if not editing or update is in progress
                         isEditing={isEditing}
-                        onKeyDown={(e) => { // Add keyboard shortcuts
+                        onKeyDown={(e) => {
+                            // Add keyboard shortcuts
                             if (e.key === 'Enter') handleEditSave();
                             if (e.key === 'Escape') handleEditCancel();
                         }}
                     />
                     {isEditing ? (
                         <>
-                            <IconButton onClick={handleEditSave} disabled={isActionInProgress(updateActionKey)}>
-                                {isActionInProgress(updateActionKey) ? '...' : '✓'}
+                            <IconButton
+                                onClick={handleEditSave}
+                                disabled={isActionInProgress(updateActionKey)}
+                            >
+                                {isActionInProgress(updateActionKey) ? (
+                                    '...'
+                                ) : (
+                                    <FiCheck size={18} />
+                                )}
                             </IconButton>
-                            <IconButton onClick={handleEditCancel} disabled={isActionInProgress(updateActionKey)}>
-                                ✕
+                            <IconButton
+                                onClick={handleEditCancel}
+                                disabled={isActionInProgress(updateActionKey)}
+                            >
+                                <FiX size={18} />
                             </IconButton>
                         </>
                     ) : (
-                        <IconButton onClick={handleEditStart} disabled={isActionInProgress(updateActionKey)}>
-                            ✎
+                        <IconButton
+                            onClick={handleEditStart}
+                            disabled={isActionInProgress(updateActionKey)}
+                        >
+                            <FiEdit size={18} />
                         </IconButton>
                     )}
                 </TitleSection>
                 <StatusSection>
                     <StatusIndicator status={asset.status}>
-                        ● {asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
+                        {asset.status === 'posting' ? <LoadingSpinner /> : '●'}
+                        {asset.status === 'process_failed'
+                            ? 'Processing Failed'
+                            : asset.status === 'posting_failed'
+                            ? 'Posting Failed'
+                            : asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
                     </StatusIndicator>
-                    <PostedIndicator isPosted={asset.is_posted}>
-                        {asset.is_posted ? '✓ Posted' : '○ Not Posted'}
-                    </PostedIndicator>
                 </StatusSection>
             </InfoSection>
             <ActionButtons>
-                {asset.status === 'failed' && (
-                    <IconButton
-                        onClick={() => reprocessAsset(asset.id)}
-                        disabled={isActionInProgress(reprocessActionKey)}
-                        title="Reprocess"
-                    >
-                        {isActionInProgress(reprocessActionKey) ? '...' : '↻'}
-                    </IconButton>
-                )}
                 <IconButton
-                    variant="primary"
-                    onClick={() => postNow(asset.id)}
-                    disabled={asset.is_posted || asset.status !== 'processed' || isActionInProgress(postActionKey)}
-                    title="Post Now"
+                    onClick={() => reprocessAsset(asset.id)}
+                    disabled={
+                        !['process_failed', 'posting_failed'].includes(asset.status) ||
+                        isActionInProgress(reprocessActionKey)
+                    }
+                    title='Reprocess'
                 >
-                    {isActionInProgress(postActionKey) ? '...' : '↗'}
+                    {isActionInProgress(reprocessActionKey) ? '...' : <FiRefreshCw size={18} />}
                 </IconButton>
                 <IconButton
-                    variant="danger"
-                    onClick={() => deleteAsset(asset.id)}
-                    disabled={isActionInProgress(deleteActionKey)}
-                    title="Delete"
+                    variant='primary'
+                    onClick={() => postNow(asset.id)}
+                    disabled={asset.status !== 'processed' || isActionInProgress(postActionKey)}
+                    title='Post Now'
                 >
-                    {isActionInProgress(deleteActionKey) ? '...' : '✕'}
+                    {isActionInProgress(postActionKey) ? '...' : <FiSend size={18} />}
+                </IconButton>
+                <IconButton
+                    variant='danger'
+                    onClick={() => deleteAsset(asset.id)}
+                    disabled={
+                        ['posting', 'deleting'].includes(asset.status) ||
+                        isActionInProgress(deleteActionKey)
+                    }
+                    title='Delete'
+                >
+                    {isActionInProgress(deleteActionKey) ? '...' : <FiTrash2 size={18} />}
                 </IconButton>
             </ActionButtons>
         </Row>
