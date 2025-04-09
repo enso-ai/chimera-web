@@ -6,18 +6,18 @@ import { ASSET_STATUS, STATUS_COLORS, FAILED_STATES, LOCKED_STATES } from 'const
 
 const Row = styled.div`
     display: grid;
-    grid-template-columns: 120px 1fr 200px;
-    gap: 16px;
+    grid-template-columns: 90px 1fr 200px;
+    gap: 20px;
     align-items: center;
-    padding: 12px;
+    padding: 20px;
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
 const Thumbnail = styled.img`
-    width: 120px;
-    height: 160px; // 3:4 aspect ratio for better vertical image display
+    width: 90px;
+    height: 120px; // 3:4 aspect ratio for better vertical image display
     object-fit: cover;
     border-radius: 4px;
 `;

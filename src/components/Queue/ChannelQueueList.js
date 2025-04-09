@@ -2,26 +2,37 @@ import { styled } from 'styled-components';
 import FileAsset from './FileAsset';
 import Loader from 'components/Loader'; // Import Loader
 
-const Container = styled.div`
+const StateContainer = styled.div`
     box-sizing: border-box;
+    width: 100%;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+`;
+
+const ListContainer = styled.div`
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
-    padding: 20px;
-`;
-
-const Summary = styled.div`
-    font-size: 16px;
-    color: #5f5f5f;
-    margin-bottom: 20px;
-`;
-
-const List = styled.div`
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
     gap: 12px;
-    overflow-y: auto;
+
+    /* Allow content to scroll but hide scrollbar */
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Hide scrollbar for Firefox */
+    scrollbar-width: none;
+
+    /* Hide scrollbar for IE, Edge */
+    -ms-overflow-style: none;
 `;
 
 const ErrorMessage = styled.div`
@@ -36,43 +47,44 @@ const ChannelQueueList = ({
     assets = [], // Default to empty array
     channelId,
     isLoading,
-    error
+    error,
 }) => {
     // Editing state is now managed within FileAsset
     // const [editingId, setEditingId] = useState(null);
-    const notPostedCount = assets.filter(a => !a.is_posted).length;
 
     // Removed handleEditStart and handleEditSave as they are no longer needed here
 
     if (isLoading && assets.length === 0) {
-        return <Container><Loader /></Container>;
+        return (
+            <StateContainer>
+                <Loader />
+            </StateContainer>
+        );
     }
 
     if (error) {
-        return <Container><ErrorMessage>Error loading queue: {error}</ErrorMessage></Container>;
+        return (
+            <StateContainer>
+                <ErrorMessage>Error loading queue: {error}</ErrorMessage>
+            </StateContainer>
+        );
     }
 
     return (
-        <Container>
-            <Summary>
-                Total Assets: {assets.length} | Not Posted: {notPostedCount}
-                {isLoading && assets.length > 0 && " (Loading more...)"}
-            </Summary>
-            <List>
-                {assets.map(asset => (
-                    <FileAsset
-                        key={asset.id}
-                        asset={asset}
-                        // Pass channelId down so FileAsset can use the hook correctly
-                        // Remove props related to editing state and handlers
-                        channelId={channelId}
-                    />
-                ))}
-                {assets.length === 0 && !isLoading && (
-                    <div>No assets in the queue for this channel.</div>
-                )}
-            </List>
-        </Container>
+        <ListContainer>
+            {assets.map((asset) => (
+                <FileAsset
+                    key={asset.id}
+                    asset={asset}
+                    // Pass channelId down so FileAsset can use the hook correctly
+                    // Remove props related to editing state and handlers
+                    channelId={channelId}
+                />
+            ))}
+            {assets.length === 0 && !isLoading && (
+                <div>No assets in the queue for this channel.</div>
+            )}
+        </ListContainer>
     );
 };
 

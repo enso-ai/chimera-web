@@ -1,5 +1,5 @@
 import { styled } from 'styled-components';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useChannel } from 'hocs/channel';
 import { useQueue } from 'hocs/queue';
 import PostMenu from 'components/Queue/PostMenu';
@@ -15,11 +15,26 @@ const Container = styled.div`
     background-color: #f0f0f0;
 `;
 
+const Header = styled.div`
+    display: flex;
+    justify-content: space-between;
+`;
+
+const Summary = styled.div`
+    font-size: 16px;
+    color: #5f5f5f;
+`;
+
 const AssetContainer = styled.div`
+    box-sizing: border-box;
+    height: 100%;
     grid-area: assets;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: space-between;
+    overflow: hidden;
+    padding: 20px;
+    gap: 20px;
 `;
 
 const UploadButtonRow = styled.div`
@@ -39,7 +54,6 @@ const ActionButton = styled.div`
     background-color: ${(props) => (props.disabled ? '#ccc' : 'orange')};
     color: black;
     cursor: pointer;
-    margin-bottom: 20px;
     transition: background-color 0.2s ease;
 `;
 
@@ -82,6 +96,10 @@ const ChannelLabel = styled.p`
     user-select: none;
 `;
 
+const PostSetting = ({ channel }) => {
+    return <div>Auto posting is not enabled</div>;
+};
+
 const AssetsView = () => {
     const { channels } = useChannel();
     // const [assets, setAssets] = useState([]); // State now managed by context
@@ -117,11 +135,19 @@ const AssetsView = () => {
         console.log('Asset upload process completed in PostMenu.');
     }, []);
 
+    const notPostedCount = useMemo(() => assets.filter((a) => !a.is_posted).length, [assets]);
+
     return (
         <Container>
             <AssetContainer>
-                {/* Pass only the assets for the selected channel */}
-                {/* Remove handler props */}
+                <Header>
+                    <Summary>
+                        Total Assets: {assets.length} | Not Posted: {notPostedCount}
+                        {isLoading && assets.length > 0 && ' (Loading more...)'}
+                    </Summary>
+                    <PostSetting channel={highlightedChannel} />
+                </Header>
+
                 <ChannelQueueList
                     assets={assets}
                     channelId={highlightedChannel?.id} // Pass channelId for FileAsset hook
