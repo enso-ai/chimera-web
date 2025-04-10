@@ -138,8 +138,11 @@ export const ChannelProvider = ({ children }) => {
         }
     }, [user]);
 
+    const channelCount = channels.length;
+
     const value = {
         channels,
+        channelCount,
         latestStats,
         historicalStats, // Provide raw historical stats, let component filter
         loadingChannels,

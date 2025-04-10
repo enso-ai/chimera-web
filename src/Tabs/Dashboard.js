@@ -117,10 +117,11 @@ const StatsCard = ({ title, count }) => {
 };
 
 export default function Dashboard() {
-    const statsKeys = ['channels', 'follower', 'videos', 'views', 'likes', 'comments'];
+    const statsKeys = ['follower', 'videos', 'views', 'likes', 'comments'];
     const [selectedPeriod, setSelectedPeriod] = useState('week');
     const {
         latestStats,
+        channelCount,
         historicalStats,
         loadingLatestStats,
         errorLatestStats,
@@ -213,6 +214,7 @@ export default function Dashboard() {
     return (
         <Container>
             {/* Top row: Stat cards (always showing latest stats) */}
+            <StatsCard key={'channels'} title={'channels'} count={channelCount} />
             {statsKeys.map((key) => (
                 <StatsCard key={key} title={key} count={counters[key]} />
             ))}
