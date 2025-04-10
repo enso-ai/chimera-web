@@ -2,6 +2,7 @@ import { styled } from 'styled-components';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useChannel } from 'hocs/channel';
 import { useQueue } from 'hocs/queue';
+import { getChannelSchedule, updateChannelSchedule } from 'services/backend';
 import PostMenu from 'components/Queue/PostMenu';
 import ChannelQueueList from 'components/Queue/ChannelQueueList';
 import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
@@ -102,8 +103,10 @@ const ChannelLabel = styled.p`
 const AssetsView = () => {
     const { channels } = useChannel();
     const [highlightedChannel, setHighlightedChannel] = useState(null);
+    const [highlightedChannelSettings, setHighlightedChannelSettings] = useState(null);
     const [showPostMenu, setShowPostMenu] = useState(false);
     const [showPostSettings, setShowPostSettings] = useState(false);
+    const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
 
     // Get queue state and refresh function for the highlighted channel
     const {
@@ -120,6 +123,25 @@ const AssetsView = () => {
         }
     }, [channels]);
 
+    useEffect(() => {
+        if (highlightedChannel) {
+            setScheduleSettingLoading(true);
+            try {
+                // Fetch the schedule for the selected channel
+                getChannelSchedule(highlightedChannel.id)
+                    .then((schedule) => {
+                        console.log('Fetched schedule:', schedule);
+                        setHighlightedChannelSettings(schedule);
+                    })
+                    .catch((err) => {
+                        console.error('Failed to fetch schedule:', err);
+                    });
+            } finally {
+                setScheduleSettingLoading(false);
+            }
+        }
+    }, [highlightedChannel]);
+
     const handleSelectChannel = (channel) => {
         setHighlightedChannel(channel);
     };
@@ -134,6 +156,54 @@ const AssetsView = () => {
         console.log('Asset upload process completed in PostMenu.');
     }, []);
 
+    const handleToggle = useCallback(
+        async (event) => {
+            const isEnabled = event.target.checked;
+            if (scheduleSettingLoading) return;
+
+            setScheduleSettingLoading(true);
+            try {
+                const new_schedule = await updateChannelSchedule(highlightedChannel.id, {
+                    ...highlightedChannelSettings,
+                    schedule_enabled: isEnabled,
+                });
+                setHighlightedChannelSettings(new_schedule); // Optimistic update
+            } catch (err) {
+                alert('Failed to update schedule. Please try again.');
+                // Revert the toggle if the update fails
+                event.target.checked = !isEnabled;
+            } finally {
+                setScheduleSettingLoading(false);
+            }
+        },
+        [highlightedChannel, highlightedChannelSettings, scheduleSettingLoading]
+    );
+
+    const handleSaveSettings = useCallback(
+        async (newSettings) => {
+            if (scheduleSettingLoading) return;
+            setScheduleSettingLoading(true);
+            try {
+                const updatedSettings = await updateChannelSchedule(
+                    highlightedChannel.id,
+                    newSettings
+                );
+                setHighlightedChannelSettings(updatedSettings); // Optimistic update
+            } catch (err) {
+                alert('Failed to update settings. Please try again.');
+            } finally {
+                setScheduleSettingLoading(false);
+                setShowPostSettings(false);
+            }
+        },
+        [
+            highlightedChannel,
+            highlightedChannelSettings,
+            scheduleSettingLoading,
+            updateChannelSchedule,
+        ]
+    );
+
     const notPostedCount = useMemo(() => assets.filter((a) => !a.is_posted).length, [assets]);
 
     return (
@@ -145,8 +215,10 @@ const AssetsView = () => {
                         {isLoading && assets.length > 0 && ' (Loading more...)'}
                     </Summary>
                     <PostSettingDisplay
-                        channel={highlightedChannel}
-                        onClick={() => setShowPostSettings(true)} // Open PostSettings dialog on click
+                        settings={highlightedChannelSettings}
+                        onToggle={handleToggle} // Pass the toggle handler
+                        loading={scheduleSettingLoading}
+                        onOpenSettings={() => setShowPostSettings(true)} // Open PostSettings dialog on click
                     />
                 </Header>
 
@@ -191,8 +263,9 @@ const AssetsView = () => {
 
             {showPostSettings && (
                 <PostSettingDialog
-                    channel={highlightedChannel}
+                    settings={highlightedChannelSettings}
                     onClose={() => setShowPostSettings(false)}
+                    onSave={handleSaveSettings}
                 />
             )}
         </Container>
