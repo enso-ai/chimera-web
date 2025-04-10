@@ -22,6 +22,7 @@ const initialState = {
     queues: {}, // { [channelId]: { assets: [], isLoading: false, isFullyLoaded: false, error: null, page: 1 } }
     actionsInProgress: new Set(), // Track ongoing API calls for specific assets (e.g., 'delete-assetId')
     pollingPostStatus: new Map(), // Track active post status polling { assetId: { intervalId: number, attempts: number } }
+    pollingDeleteStatus: new Map(), // Track active delete status polling { assetId: { intervalId: number, attempts: number, channelId: string } }
 };
 
 const actionTypes = {
@@ -184,6 +185,11 @@ function queueReducer(state, action) {
 }
 
 const PAGE_SIZE = 20; // Or adjust as needed
+const POLLING_INTERVAL = 3000; // 5 seconds
+const MAX_POLLING_ATTEMPTS = {
+    POST: 12, //36 seconds total (12 * 3000ms)
+    DELETE: 6, // 18 seconds total (6 * 3000ms)
+};
 
 export const QueueProvider = ({ children }) => {
     const [state, dispatch] = useReducer(queueReducer, initialState);
@@ -315,8 +321,8 @@ export const QueueProvider = ({ children }) => {
                 if (!pollState) return; // Polling was stopped
 
                 const newAttempts = pollState.attempts + 1;
-                if (newAttempts > 6) {
-                    // Stop polling after 6 attempts (30 seconds)
+                if (newAttempts > MAX_POLLING_ATTEMPTS.POST) {
+                    // Stop polling after max attempts
                     clearInterval(intervalId);
                     state.pollingPostStatus.delete(assetId);
                     console.warn(`Polling timed out for asset ${assetId}`);
@@ -352,7 +358,7 @@ export const QueueProvider = ({ children }) => {
                         attempts: newAttempts,
                     });
                 }
-            }, 5000); // Poll every 5 seconds
+            }, POLLING_INTERVAL);
 
             // Initialize polling state
             state.pollingPostStatus.set(assetId, {
@@ -406,6 +412,74 @@ export const QueueProvider = ({ children }) => {
         [state.queues, isActionInProgress, startPollingPostStatus]
     );
 
+    const startPollingDeleteStatus = useCallback(
+        (channelId, assetId) => {
+            // Clear any existing polling for this asset
+            if (state.pollingDeleteStatus.has(assetId)) {
+                clearInterval(state.pollingDeleteStatus.get(assetId).intervalId);
+            }
+
+            const intervalId = setInterval(async () => {
+                const pollState = state.pollingDeleteStatus.get(assetId);
+                if (!pollState) return; // Polling was stopped
+
+                const newAttempts = pollState.attempts + 1;
+                if (newAttempts > MAX_POLLING_ATTEMPTS.DELETE) {
+                    clearInterval(intervalId);
+                    state.pollingDeleteStatus.delete(assetId);
+                    console.warn(`Delete polling timed out for asset ${assetId}`);
+                    return;
+                }
+
+                try {
+                    await getPostStatus(assetId);
+                    // If we get here, the asset still exists
+                    state.pollingDeleteStatus.set(assetId, {
+                        intervalId,
+                        attempts: newAttempts,
+                        channelId,
+                    });
+                } catch (error) {
+                    if (error.code === 404) {
+                        // Asset has been deleted from the backend
+                        clearInterval(intervalId);
+                        state.pollingDeleteStatus.delete(assetId);
+                        dispatch({
+                            type: actionTypes.REMOVE_ASSET,
+                            payload: { channelId, assetId },
+                        });
+                    } else {
+                        // Other error, continue polling
+                        state.pollingDeleteStatus.set(assetId, {
+                            intervalId,
+                            attempts: newAttempts,
+                            channelId,
+                        });
+                    }
+                }
+            }, POLLING_INTERVAL);
+
+            // Initialize polling state
+            state.pollingDeleteStatus.set(assetId, {
+                intervalId,
+                attempts: 0,
+                channelId,
+            });
+        },
+        [state.pollingDeleteStatus, dispatch]
+    );
+
+    const stopPollingDeleteStatus = useCallback(
+        (assetId) => {
+            const pollState = state.pollingDeleteStatus.get(assetId);
+            if (pollState) {
+                clearInterval(pollState.intervalId);
+                state.pollingDeleteStatus.delete(assetId);
+            }
+        },
+        [state.pollingDeleteStatus]
+    );
+
     const handleDeleteAsset = useCallback(
         async (channelId, assetId) => {
             const actionKey = `delete-${assetId}`;
@@ -423,19 +497,28 @@ export const QueueProvider = ({ children }) => {
 
             // Stop any active polling
             stopPollingPostStatus(assetId);
+            stopPollingDeleteStatus(assetId);
 
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
             const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
-            // Optimistic update
-            dispatch({ type: actionTypes.REMOVE_ASSET, payload: { channelId, assetId } });
 
             try {
+                // Update status to deleting
+                dispatch({
+                    type: actionTypes.SET_ASSET,
+                    payload: {
+                        channelId,
+                        asset: { ...originalAsset, status: ASSET_STATUS.DELETING },
+                    },
+                });
+
                 await deleteAssets([assetId]);
-                // Success - state already updated
+                // Start polling for deletion confirmation
+                startPollingDeleteStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to delete asset:', error);
                 alert('Failed to delete video. Please try again.');
-                // Revert optimistic update on error
+                // Revert status change on error
                 if (originalAsset) {
                     dispatch({
                         type: actionTypes.SET_ASSET,
@@ -446,7 +529,13 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress, stopPollingPostStatus]
+        [
+            state.queues,
+            isActionInProgress,
+            stopPollingPostStatus,
+            stopPollingDeleteStatus,
+            startPollingDeleteStatus,
+        ]
     );
 
     const handleReprocessAsset = useCallback(
@@ -484,8 +573,13 @@ export const QueueProvider = ({ children }) => {
                 clearInterval(pollState.intervalId);
             });
             state.pollingPostStatus.clear();
+
+            state.pollingDeleteStatus.forEach((pollState, assetId) => {
+                clearInterval(pollState.intervalId);
+            });
+            state.pollingDeleteStatus.clear();
         };
-    }, [state.pollingPostStatus]);
+    }, [state.pollingPostStatus, state.pollingDeleteStatus]);
 
     const value = {
         getQueueState,
