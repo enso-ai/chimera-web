@@ -243,7 +243,7 @@ const TermsOfService = () => {
                     compliance.
                 </Paragraph>
             </TermsContainer>
-            <Footer background_color='#333' font_color='#fff' max_width='800px' />
+            <Footer background_color='#333' font_color='#fff' />
         </Container>
     );
 };

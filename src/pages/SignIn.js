@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import LoginDialog from '../components/SignIn/LoginDialog';
+import Footer from 'components/Footer';
 
 const SignInContainer = styled.div`
     display: flex;
@@ -16,6 +17,7 @@ const SignIn = () => {
     return (
         <SignInContainer>
             <LoginDialog />
+            <Footer />
         </SignInContainer>
     );
 };

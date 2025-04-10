@@ -309,7 +309,7 @@ const PrivacyPolicy = () => {
                     <a href='mailto:contact@voistory.ai'>contact@voistory.ai</a>.
                 </Paragraph>
             </PolicyContainer>
-            <Footer background_color='#333' font_color='#fff' max_width='800px' />
+            <Footer background_color='#333' font_color='#fff' />
         </Container>
     );
 };
