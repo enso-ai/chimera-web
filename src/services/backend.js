@@ -150,3 +150,13 @@ export const getPostStatus = async (fileId) => {
     const response = await api.get(`assets/${fileId}/post_status`);
     return response.data;
 };
+
+export const getChannelSchedule = async (channelId) => {
+    const response = await api.get(`channels/${channelId}/schedule`);
+    return response.data;
+};
+
+export const updateChannelSchedule = async (channelId, payload) => {
+    const response = await api.patch(`channels/${channelId}/schedule`, payload);
+    return response.data;
+};

@@ -4,6 +4,8 @@ import { useChannel } from 'hocs/channel';
 import { useQueue } from 'hocs/queue';
 import PostMenu from 'components/Queue/PostMenu';
 import ChannelQueueList from 'components/Queue/ChannelQueueList';
+import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
+import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
 
 const Container = styled.div`
     display: grid;
@@ -18,6 +20,7 @@ const Container = styled.div`
 const Header = styled.div`
     display: flex;
     justify-content: space-between;
+    align-items: center;
 `;
 
 const Summary = styled.div`
@@ -96,15 +99,11 @@ const ChannelLabel = styled.p`
     user-select: none;
 `;
 
-const PostSetting = ({ channel }) => {
-    return <div>Auto posting is not enabled</div>;
-};
-
 const AssetsView = () => {
     const { channels } = useChannel();
-    // const [assets, setAssets] = useState([]); // State now managed by context
     const [highlightedChannel, setHighlightedChannel] = useState(null);
     const [showPostMenu, setShowPostMenu] = useState(false);
+    const [showPostSettings, setShowPostSettings] = useState(false);
 
     // Get queue state and refresh function for the highlighted channel
     const {
@@ -145,7 +144,10 @@ const AssetsView = () => {
                         Total Assets: {assets.length} | Not Posted: {notPostedCount}
                         {isLoading && assets.length > 0 && ' (Loading more...)'}
                     </Summary>
-                    <PostSetting channel={highlightedChannel} />
+                    <PostSettingDisplay
+                        channel={highlightedChannel}
+                        onClick={() => setShowPostSettings(true)} // Open PostSettings dialog on click
+                    />
                 </Header>
 
                 <ChannelQueueList
@@ -184,6 +186,13 @@ const AssetsView = () => {
                     channel={highlightedChannel}
                     onClose={() => setShowPostMenu(false)}
                     onSuccess={handleAddAssetSuccess} // Pass the simplified handler
+                />
+            )}
+
+            {showPostSettings && (
+                <PostSettingDialog
+                    channel={highlightedChannel}
+                    onClose={() => setShowPostSettings(false)}
                 />
             )}
         </Container>
