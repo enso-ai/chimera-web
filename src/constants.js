@@ -1,11 +1,10 @@
-// Use environment variable for client key
-export const CLIENT_KEY = process.env.REACT_APP_TIKTOK_CLIENT_KEY || 'sbaw8h6p58f0t5wmyc';
+export const CLIENT_KEY = process.env.REACT_APP_TIKTOK_CLIENT_KEY;
 export const REDIRECT_PATH = '/login_callback/';
 
 // Environment variables example
 // Environment variables prefixed with REACT_APP_ are embedded during build time
 // and remain accessible at runtime through process.env.REACT_APP_*
-export const API_URL = process.env.REACT_APP_API_URL || 'https://default-api-url.com';
+export const BASE_URL = process.env.REACT_APP_BASE_URL;
 
 export const PageNames = {
     SIGNIN: 'signin',
