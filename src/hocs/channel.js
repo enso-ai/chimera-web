@@ -3,6 +3,7 @@ import { listChannels, getTotalStats, getChannelStats } from 'services/backend';
 import { useAuth } from 'hocs/auth';
 
 const INITIAL_FETCH_PERIOD = 'quarter'; // initial fetch period for historical stats
+const DEFAULT_CHANNEL_PAGE_SIZE = 50;
 
 const ChannelContext = createContext();
 
@@ -12,29 +13,55 @@ export const ChannelProvider = ({ children }) => {
     const channelStatsMap = useRef({}); // Map to store channel stats by ID
     // Stats for the top cards (latest data)
     const [latestStats, setLatestStats] = useState([]);
-    const [loadingLatestStats, setLoadingLatestStats] = useState(true);
+    const [loadingLatestStats, setLoadingLatestStats] = useState(false);
     const [errorLatestStats, setErrorLatestStats] = useState(null);
 
     // Stats for the chart (historical data)
     const [historicalStats, setHistoricalStats] = useState([]);
     const [hasAllTimeData, setHasAllTimeData] = useState(false); // Track if we've fetched all data
-    const [loadingChannels, setLoadingChannels] = useState(true);
+    const [loadingChannels, setLoadingChannels] = useState(false);
     const [errorChannels, setErrorChannels] = useState(null);
-    const [loadingHistoricalStats, setLoadingHistoricalStats] = useState(true);
+    const [loadingHistoricalStats, setLoadingHistoricalStats] = useState(false);
     const [errorHistoricalStats, setErrorHistoricalStats] = useState(null);
 
     const fetchChannels = async () => {
         console.log('Fetching channels...');
+        if (loadingChannels) {
+            console.log('Already loading channels, skipping fetch.');
+            return;
+        }
         setLoadingChannels(true);
         setErrorChannels(null);
+        setChannels([]); // Reset channels at start
+
+        let currentPage = 1;
+        let hasNext = true;
+
         try {
-            const res = await listChannels();
-            console.log('Channels fetched:', res.data);
-            setChannels(res.data || []);
+            while (hasNext) {
+                console.log(`Fetching channels page ${currentPage}...`);
+                const response = await listChannels(currentPage, DEFAULT_CHANNEL_PAGE_SIZE);
+
+                if (response && response.data) {
+                    console.log(
+                        `Received ${response.data.length} channels from page ${currentPage}`
+                    );
+                    // Append new channels to existing ones
+                    setChannels((prevChannels) => [...prevChannels, ...response.data]);
+
+                    // Check if there are more pages
+                    hasNext = response.has_next;
+                    currentPage++;
+                } else {
+                    console.warn('Received invalid response format from listChannels');
+                    hasNext = false;
+                }
+            }
+            console.log('Finished fetching all channels');
         } catch (error) {
             console.error('Error fetching channels:', error);
             setErrorChannels(error);
-            setChannels([]); // Clear channels on error
+            // Note: We don't clear channels here as we want to keep any partially fetched data
         } finally {
             setLoadingChannels(false);
         }
@@ -43,6 +70,10 @@ export const ChannelProvider = ({ children }) => {
     // Fetch latest stats (for cards)
     const fetchLatestStats = async () => {
         console.log('Fetching latest stats...');
+        if (loadingLatestStats) {
+            console.log('Already loading latest stats, skipping fetch.');
+            return;
+        }
         setLoadingLatestStats(true);
         setErrorLatestStats(null);
         try {
