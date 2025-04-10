@@ -28,12 +28,9 @@ export const verifyTiktokToken = async (code) => {
     return response.data;
 };
 
-export const listChannels = async () => {
+export const listChannels = async (page_no = 1, page_size = 20) => {
     const response = await api.get('channels/', {
-        params: {
-            page_no: 1,
-            page_size: 20,
-        }
+        params: { page_no, page_size },
     });
     return response.data;
 };
