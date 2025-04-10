@@ -9,7 +9,7 @@ const FooterContainer = styled.div`
     left: 0px;
     z-index: 100;
 
-    background-color: ${(props) => props.bg_color};
+    background-color: ${(props) => props.$bg_color};
     box-sizing: border-box;
     color: white;
     display: flex;
@@ -18,7 +18,7 @@ const FooterContainer = styled.div`
 `;
 
 const TextContainer = styled.div`
-    max-width: ${(props) => props.max_width};
+    max-width: ${(props) => props.$max_width};
     width: 100%;
     display: flex;
     justify-content: flex-start;
@@ -28,7 +28,7 @@ const TextContainer = styled.div`
 
 const LegalDocLink = styled(Link)`
     font-size: 14px;
-    color: ${(props) => props.font_color};
+    color: ${(props) => props.$font_color};
 `;
 
 export default function Footer({
@@ -37,12 +37,12 @@ export default function Footer({
     max_width = 'calc(100% - 40px)',
 }) {
     return (
-        <FooterContainer bg_color={background_color}>
-            <TextContainer max_width={max_width}>
-                <LegalDocLink to={'/terms-of-service'} font_color={font_color}>
+        <FooterContainer $bg_color={background_color}>
+            <TextContainer $max_width={max_width}>
+                <LegalDocLink to={'/terms-of-service'} $font_color={font_color}>
                     Terms of Service
                 </LegalDocLink>
-                <LegalDocLink to={'/privacy-policy'} font_color={font_color}>
+                <LegalDocLink to={'/privacy-policy'} $font_color={font_color}>
                     Privacy Policy
                 </LegalDocLink>
             </TextContainer>
