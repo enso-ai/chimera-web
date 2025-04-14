@@ -108,14 +108,7 @@ const AssetsView = () => {
     const [showPostSettings, setShowPostSettings] = useState(false);
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
 
-    // Get queue state and refresh function for the highlighted channel
-    const {
-        assets,
-        isLoading, // Can use this to show loading indicators
-        error, // Can use this to show error messages
-    } = useQueue(highlightedChannel?.id); // Use the context hook
-
-    // No need for the useEffect that called refreshAssets, useQueue handles initial fetch
+    const { assets, isLoading, error } = useQueue(highlightedChannel?.id);
 
     useEffect(() => {
         if (channels && channels.length > 0) {
@@ -157,8 +150,7 @@ const AssetsView = () => {
     }, []);
 
     const handleToggle = useCallback(
-        async (event) => {
-            const isEnabled = event.target.checked;
+        async (isEnabled) => {
             if (scheduleSettingLoading) return;
 
             setScheduleSettingLoading(true);
@@ -170,8 +162,6 @@ const AssetsView = () => {
                 setHighlightedChannelSettings(new_schedule); // Optimistic update
             } catch (err) {
                 alert('Failed to update schedule. Please try again.');
-                // Revert the toggle if the update fails
-                event.target.checked = !isEnabled;
             } finally {
                 setScheduleSettingLoading(false);
             }
@@ -179,30 +169,19 @@ const AssetsView = () => {
         [highlightedChannel, highlightedChannelSettings, scheduleSettingLoading]
     );
 
-    const handleSaveSettings = useCallback(
-        async (newSettings) => {
-            if (scheduleSettingLoading) return;
-            setScheduleSettingLoading(true);
-            try {
-                const updatedSettings = await updateChannelSchedule(
-                    highlightedChannel.id,
-                    newSettings
-                );
-                setHighlightedChannelSettings(updatedSettings); // Optimistic update
-            } catch (err) {
-                alert('Failed to update settings. Please try again.');
-            } finally {
-                setScheduleSettingLoading(false);
-                setShowPostSettings(false);
-            }
-        },
-        [
-            highlightedChannel,
-            highlightedChannelSettings,
-            scheduleSettingLoading,
-            updateChannelSchedule,
-        ]
-    );
+    const handleSaveSettings = async (newSettings) => {
+        if (scheduleSettingLoading) return;
+        setScheduleSettingLoading(true);
+        try {
+            const updatedSettings = await updateChannelSchedule(highlightedChannel.id, newSettings);
+            setHighlightedChannelSettings(updatedSettings); // Optimistic update
+        } catch (err) {
+            alert('Failed to update settings. Please try again.');
+        } finally {
+            setScheduleSettingLoading(false);
+            setShowPostSettings(false);
+        }
+    };
 
     const notPostedCount = useMemo(() => assets.filter((a) => !a.is_posted).length, [assets]);
 
@@ -216,15 +195,14 @@ const AssetsView = () => {
                     </Summary>
                     <PostSettingDisplay
                         settings={highlightedChannelSettings}
-                        onToggle={handleToggle} // Pass the toggle handler
-                        loading={scheduleSettingLoading}
-                        onOpenSettings={() => setShowPostSettings(true)} // Open PostSettings dialog on click
+                        onToggle={handleToggle}
+                        onOpenSettings={() => setShowPostSettings(true)}
                     />
                 </Header>
 
                 <ChannelQueueList
                     assets={assets}
-                    channelId={highlightedChannel?.id} // Pass channelId for FileAsset hook
+                    channelId={highlightedChannel?.id}
                     isLoading={isLoading}
                     error={error}
                 />
@@ -257,7 +235,7 @@ const AssetsView = () => {
                 <PostMenu
                     channel={highlightedChannel}
                     onClose={() => setShowPostMenu(false)}
-                    onSuccess={handleAddAssetSuccess} // Pass the simplified handler
+                    onSuccess={handleAddAssetSuccess}
                 />
             )}
 

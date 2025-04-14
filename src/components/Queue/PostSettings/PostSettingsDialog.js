@@ -1,35 +1,23 @@
-import { Fragment, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { styled } from 'styled-components';
-import Switch from './Switch';
-
-const Overlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-`;
+import { ConfirmButton, CancelButton } from 'components/Button';
+import Modal from 'components/Modal';
+import Switch from 'components/Queue/PostSettings/Switch';
+import { convertUtcToPst, convertPstToUtc, roundTimeUpToNearest10Minutes } from 'utils/time';
 
 const MenuContainer = styled.div`
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    padding: 24px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Adjusted rows to accommodate new time input and helper text */
+    grid-template-rows: auto auto auto auto auto;
+    gap: 15px; /* Slightly reduced gap */
+    align-items: center;
     width: 500px;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: 20px;
     max-height: 90vh;
-    overflow-y: auto; /* Enable scroll if content overflows */
+    overflow-y: auto;
+    background-color: #fff;
+    border-radius: 12px;
 `;
 
 const ModalTitle = styled.h2`
@@ -38,31 +26,42 @@ const ModalTitle = styled.h2`
     color: #333;
     margin: 0 0 10px 0;
     text-align: center;
+    grid-column: 1 / -1;
 `;
 
 const Section = styled.div`
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Adjusted rows for schedule section */
+    grid-template-rows: auto auto auto auto auto;
+    gap: 10px;
+
     border-top: 1px solid #eee;
-    padding-top: 20px;
+    padding-top: 10px;
 `;
 
 const SectionTitle = styled.h3`
     font-size: 1.1em;
     font-weight: 600;
     color: #495057;
-    margin-bottom: 15px;
+    margin: 0;
+    justify-self: start;
+    align-self: center;
 `;
 
-const FormRow = styled.div`
+const SwitchContainer = styled.div`
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
 `;
 
 const FormLabel = styled.label`
     color: #495057;
-    flex-basis: 60%;
+    color: #495057;
+    justify-self: start;
+    align-self: center; /* Align vertically */
+    line-height: 1.5; /* Ensure text aligns well with input */
 `;
 
 const FormInput = styled.input`
@@ -70,8 +69,8 @@ const FormInput = styled.input`
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 1em;
-    flex-grow: 1;
-    max-width: 100px;
+    max-width: 200px;
+    justify-self: end;
 
     &:disabled {
         background-color: #f8f9fa;
@@ -81,42 +80,39 @@ const FormInput = styled.input`
     }
 `;
 
-const ButtonContainer = styled.div`
+// Container for HH:MM inputs
+const TimeInputContainer = styled.div`
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 10px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
+    align-items: center;
+    gap: 5px;
+    justify-self: end; /* Align the container to the right */
 `;
 
-const Button = styled.button`
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-`;
-
-const SaveButton = styled(Button)`
-    background-color: #ffc107;
-    color: #333;
-
-    &:hover {
-        background-color: #e0a800;
+const TimeInput = styled(FormInput)`
+    max-width: 60px; /* Smaller width for HH/MM */
+    text-align: center;
+    /* Remove spinner arrows for number input */
+    -moz-appearance: textfield;
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
 `;
 
-const CancelButton = styled(Button)`
-    background-color: #f8f9fa;
+const TimeSeparator = styled.span`
+    font-size: 1.2em;
+    font-weight: bold;
     color: #495057;
-    border: 1px solid #dee2e6;
+`;
 
-    &:hover {
-        background-color: #e9ecef;
-    }
+const ButtonsWrapper = styled.div`
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    grid-column: 1 / -1;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
 `;
 
 const ErrorMessage = styled.div`
@@ -124,165 +120,293 @@ const ErrorMessage = styled.div`
     font-size: 0.9em;
     min-height: 1.2em;
     text-align: center;
-    margin-top: 10px;
-`;
-
-const StyledSwitch = styled(Switch)`
-  margin-left: auto;
+    grid-column: 1 / -1;
 `;
 
 const DisabledLabel = styled(FormLabel)`
     color: #adb5bd;
 `;
 
-export default function PostSettingDisplay({ settings, onClose, onSave }) {
+const HelperText = styled.p`
+    font-size: 0.8em;
+    color: #6c757d;
+    margin: -5px 0 5px 0; /* Adjust spacing */
+    grid-column: 2 / 3; /* Align under the input */
+    justify-self: end;
+`;
+
+export default function PostSettingDialog({ settings, onClose, onSave }) {
     const [error, setError] = useState(null);
+    // Initialize state from settings prop
+    const [scheduleEnabled, setScheduleEnabled] = useState(settings?.schedule_enabled ?? false);
+    const [postAmount, setPostAmount] = useState(settings?.post_amount?.toString() ?? '1');
+    const [postInterval, setPostInterval] = useState(settings?.post_interval?.toString() ?? '1');
+    // Initialize separate hour and minute states
+    const initialPstTime = convertUtcToPst(settings?.post_time) ?? '09:00';
+    const [initialHour, initialMinute] = initialPstTime.split(':');
+    const [postHour, setPostHour] = useState(initialHour);
+    const [postMinute, setPostMinute] = useState(initialMinute);
+    const [alertEnabled, setAlertEnabled] = useState(settings?.alert_enabled ?? false);
+    const [alertTriggerThreshold, setAlertTriggerThreshold] = useState(
+        settings?.alert_trigger_threshold ?? 5
+    );
+    const [alertEmailDestination, setAlertEmailDestination] = useState(
+        settings?.alert_email_destination ?? ''
+    );
 
-    const {
-        schedule_enabled,
-        post_amount,
-        post_interval,
-        alert_enabled,
-        alert_trigger_threshold = 5, // Default value
-        alert_email_destination,
-    } = settings || {};
-
-    const [formData, setFormData] = useState({
-        schedule_enabled: schedule_enabled ?? false,
-        post_amount: post_amount ?? '',
-        post_interval: post_interval ?? '',
-        alert_enabled: alert_enabled ?? false,
-        alert_trigger_threshold: alert_trigger_threshold ?? 5,
-        alert_email_destination: alert_email_destination ?? '',
-    });
-
-    const handleChange = useCallback((e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    }, []);
+    // Effect to update state if settings prop changes externally
+    useEffect(() => {
+        setScheduleEnabled(settings?.schedule_enabled ?? false);
+        setPostAmount(settings?.post_amount?.toString() ?? '1');
+        setPostInterval(settings?.post_interval?.toString() ?? '1');
+        // Update hour/minute state when settings change
+        const pstTime = convertUtcToPst(settings?.post_time) ?? '09:00';
+        const [hour, minute] = pstTime.split(':');
+        setPostHour(hour);
+        setPostMinute(minute);
+        setAlertEnabled(settings?.alert_enabled ?? false);
+        setAlertTriggerThreshold(settings?.alert_trigger_threshold ?? 5);
+        setAlertEmailDestination(settings?.alert_email_destination ?? '');
+    }, [settings]);
 
     const validateForm = useCallback(() => {
-        const { alert_enabled, alert_email_destination, post_amount, post_interval, alert_trigger_threshold } = formData;
-        if (alert_enabled) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!alert_email_destination || !emailRegex.test(alert_email_destination)) {
-                setError('Please enter a valid email address.');
+        setError(null); // Reset error on each validation
+
+        if (scheduleEnabled) {
+            if (!postAmount || parseInt(postAmount, 10) < 1) {
+                setError('Post amount must be at least 1.');
+                return false;
+            }
+            if (!postInterval || parseInt(postInterval, 10) < 1) {
+                setError('Post interval must be at least 1 day.');
+                return false;
+            }
+            // Validate hour and minute inputs
+            const hourNum = parseInt(postHour, 10);
+            const minuteNum = parseInt(postMinute, 10);
+            if (isNaN(hourNum) || hourNum < 0 || hourNum > 23) {
+                setError('Please enter a valid hour (00-23).');
+                return false;
+            }
+            if (isNaN(minuteNum) || minuteNum < 0 || minuteNum > 59) {
+                setError('Please enter valid minutes (00-59).');
                 return false;
             }
         }
 
-        if (!post_amount || parseInt(post_amount) < 1) {
-            setError('Post amount must be at least 1.');
-            return false;
+        if (alertEnabled) {
+            if (!alertTriggerThreshold || parseInt(alertTriggerThreshold, 10) < 1) {
+                setError('Alert trigger threshold must be at least 1.');
+                return false;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!alertEmailDestination || !emailRegex.test(alertEmailDestination)) {
+                setError('Please enter a valid email address for alerts.');
+                return false;
+            }
         }
 
-        if (!post_interval || parseInt(post_interval) < 1) {
-            setError('Post interval must be at least 1.');
-            return false;
-        }
-
-         if (alert_enabled && (!alert_trigger_threshold || parseInt(alert_trigger_threshold) < 1)) {
-            setError('Alert trigger threshold must be at least 1.');
-            return false;
-        }
-
-        setError(null);
-        return true;
-    }, [formData]);
+        return true; // Validation passed
+    }, [
+        scheduleEnabled,
+        postAmount,
+        postInterval,
+        postHour,
+        postMinute,
+        alertEnabled,
+        alertTriggerThreshold,
+        alertEmailDestination,
+    ]);
 
     const handleSave = useCallback(() => {
         if (validateForm()) {
-            onSave(formData);
-        }
-    }, [formData, onSave, validateForm]);
+            let finalPostTimeUtc = null;
+            if (scheduleEnabled) {
+                // Combine hour and minute, ensuring leading zeros
+                const formattedHour = String(postHour).padStart(2, '0');
+                const formattedMinute = String(postMinute).padStart(2, '0');
+                const combinedPstTime = `${formattedHour}:${formattedMinute}`;
 
-    const isAlertEnabled = formData.alert_enabled;
+                const roundedPst = roundTimeUpToNearest10Minutes(combinedPstTime);
+                if (roundedPst) {
+                    finalPostTimeUtc = convertPstToUtc(roundedPst);
+                } else {
+                    // This case should ideally be prevented by validateForm
+                    setError('Invalid time entered.');
+                    return;
+                }
+            }
+
+            const payload = {
+                schedule_enabled: scheduleEnabled,
+                // Only include schedule details if enabled
+                ...(scheduleEnabled && {
+                    post_amount: parseInt(postAmount, 10),
+                    post_interval: parseInt(postInterval, 10),
+                    post_time: finalPostTimeUtc, // Send UTC time, or null/undefined if not applicable
+                }),
+                // Always include alert details
+                alert_enabled: alertEnabled,
+                alert_trigger_threshold: parseInt(alertTriggerThreshold, 10),
+                alert_email_destination: alertEmailDestination,
+            };
+
+            // Clean up payload: remove post_time if it's null and schedule is off
+            // The API might handle null, but let's be explicit if schedule is off
+            if (!scheduleEnabled) {
+                delete payload.post_amount;
+                delete payload.post_interval;
+                delete payload.post_time;
+            } else if (payload.post_time === null) {
+                // If schedule is on but time conversion failed (shouldn't happen with validation)
+                // or if we decide null shouldn't be sent, handle here.
+                // For now, we send null if schedule is on but time is invalid/empty after rounding/conversion.
+                // Let's refine: only send post_time if it's a valid UTC string.
+                if (!finalPostTimeUtc) {
+                    delete payload.post_time; // Don't send invalid time
+                }
+            }
+
+            onSave(payload);
+        }
+    }, [
+        validateForm,
+        scheduleEnabled,
+        postAmount,
+        postInterval,
+        postHour,
+        postMinute,
+        alertEnabled,
+        alertTriggerThreshold,
+        alertEmailDestination,
+        onSave,
+        validateForm,
+    ]);
+
+    const PostingRules = (
+        <Section>
+            <SectionTitle>Schedule Posting</SectionTitle>
+            <SwitchContainer>
+                <Switch
+                    toggled={scheduleEnabled}
+                    activeColor='#4CAF50'
+                    inactiveColor='#adb5bd'
+                    onChange={setScheduleEnabled}
+                />
+            </SwitchContainer>
+
+            {/* Post Amount */}
+            <DisabledLabel htmlFor='post_amount' className={scheduleEnabled ? '' : 'disabled'}>
+                Number of posts per interval:
+            </DisabledLabel>
+            <FormInput
+                id='post_amount'
+                type='number'
+                name='post_amount'
+                value={postAmount}
+                onChange={(e) => setPostAmount(e.target.value)}
+                min='1'
+                disabled={!scheduleEnabled}
+            />
+
+            {/* Post Interval */}
+            <DisabledLabel htmlFor='post_interval' className={scheduleEnabled ? '' : 'disabled'}>
+                Time between posts (days):
+            </DisabledLabel>
+            <FormInput
+                id='post_interval'
+                type='number'
+                name='post_interval'
+                value={postInterval}
+                onChange={(e) => setPostInterval(e.target.value)}
+                min='1'
+                disabled={!scheduleEnabled}
+            />
+
+            {/* Post Time HH:MM */}
+            <DisabledLabel htmlFor='post_hour' className={scheduleEnabled ? '' : 'disabled'}>
+                Time to post:
+            </DisabledLabel>
+            <TimeInputContainer>
+                <TimeInput
+                    id='post_hour'
+                    type='number'
+                    name='post_hour'
+                    value={postHour}
+                    onChange={(e) => setPostHour(e.target.value)}
+                    placeholder='HH'
+                    min='0'
+                    max='23'
+                    disabled={!scheduleEnabled}
+                />
+                <TimeSeparator>:</TimeSeparator>
+                <TimeInput
+                    id='post_minute'
+                    type='number'
+                    name='post_minute'
+                    value={postMinute}
+                    onChange={(e) => setPostMinute(e.target.value)}
+                    placeholder='MM'
+                    min='0'
+                    max='59'
+                    disabled={!scheduleEnabled}
+                />
+            </TimeInputContainer>
+            {scheduleEnabled && (
+                <HelperText>
+                    Note: Time will be rounded up to the nearest 10 minutes upon saving.
+                </HelperText>
+            )}
+        </Section>
+    );
+
+    const AlertRules = (
+        <Section>
+            <SectionTitle>Alert Rules</SectionTitle>
+            <SwitchContainer>
+                <Switch
+                    toggled={alertEnabled}
+                    activeColor='#4CAF50'
+                    inactiveColor='#adb5bd'
+                    onChange={setAlertEnabled}
+                />
+            </SwitchContainer>
+            <DisabledLabel htmlFor='alert_email' className={alertEnabled ? '' : 'disabled'}>
+                Send alerts to email:
+            </DisabledLabel>
+            <FormInput
+                type='email'
+                name='alert_email_destination'
+                value={alertEmailDestination}
+                onChange={(e) => setAlertEmailDestination(e.target.value)}
+                disabled={!alertEnabled}
+            />
+            <DisabledLabel htmlFor='alert_threshold' className={alertEnabled ? '' : 'disabled'}>
+                Alert after consecutive failures:
+            </DisabledLabel>
+            <FormInput
+                type='number'
+                name='alert_trigger_threshold'
+                value={alertTriggerThreshold}
+                onChange={(e) => setAlertTriggerThreshold(e.target.value)}
+                min='1'
+                disabled={!alertEnabled}
+            />
+        </Section>
+    );
 
     return (
-        <Fragment>
-            <Overlay onClick={onClose} />
+        <Modal onClose={onClose}>
             <MenuContainer>
-                <ModalTitle>Posting Schedule Settings</ModalTitle>
-
-                <Section>
-                    <SectionTitle>Posting Rules</SectionTitle>
-                    <FormRow>
-                        <FormLabel htmlFor="post_amount">Number of posts per interval:</FormLabel>
-                        <FormInput
-                            type="number"
-                            id="post_amount"
-                            name="post_amount"
-                            value={formData.post_amount}
-                            onChange={handleChange}
-                            min="1"
-                        />
-                    </FormRow>
-                    <FormRow>
-                        <FormLabel htmlFor="post_interval">Time between posts (minutes):</FormLabel>
-                        <FormInput
-                            type="number"
-                            id="post_interval"
-                            name="post_interval"
-                            value={formData.post_interval}
-                            onChange={handleChange}
-                            min="1"
-                        />
-                    </FormRow>
-                    <FormRow>
-                        <FormLabel htmlFor="schedule_enabled">Enable automatic posting:</FormLabel>
-                        <StyledSwitch
-                            id="schedule_enabled"
-                            toggled={formData.schedule_enabled}
-                            onChange={e => handleChange({ target: { name: 'schedule_enabled', value: e.target.checked, type: 'checkbox' } })}
-                        />
-                    </FormRow>
-                </Section>
-
-                <Section>
-                    <SectionTitle>Alert Rules</SectionTitle>
-                    <FormRow>
-                        <FormLabel htmlFor="alert_enabled">Enable failure alerts:</FormLabel>
-                        <StyledSwitch
-                            id="alert_enabled"
-                            toggled={formData.alert_enabled}
-                            onChange={e => handleChange({ target: { name: 'alert_enabled', value: e.target.checked, type: 'checkbox' } })}
-                        />
-                    </FormRow>
-                    <FormRow>
-                        <DisabledLabel htmlFor="alert_email" className={isAlertEnabled ? '' : 'disabled'}>Send alerts to email:</DisabledLabel>
-                        <FormInput
-                            type="email"
-                            id="alert_email"
-                            name="alert_email_destination"
-                            value={formData.alert_email_destination}
-                            onChange={handleChange}
-                            disabled={!isAlertEnabled}
-                        />
-                    </FormRow>
-                    <FormRow>
-                        <DisabledLabel htmlFor="alert_threshold" className={isAlertEnabled ? '' : 'disabled'}>Alert after consecutive failures:</DisabledLabel>
-                        <FormInput
-                            type="number"
-                            id="alert_threshold"
-                            name="alert_trigger_threshold"
-                            value={formData.alert_trigger_threshold}
-                            onChange={handleChange}
-                            min="1"
-                            disabled={!isAlertEnabled}
-                        />
-                    </FormRow>
-                </Section>
-
+                <ModalTitle>Schedule Settings</ModalTitle>
+                {PostingRules}
+                {AlertRules}
                 <ErrorMessage>{error}</ErrorMessage>
-
-                <ButtonContainer>
+                <ButtonsWrapper>
                     <CancelButton onClick={onClose}>Cancel</CancelButton>
-                    <SaveButton onClick={handleSave}>Save</SaveButton>
-                </ButtonContainer>
+                    <ConfirmButton onClick={handleSave}>Save</ConfirmButton>
+                </ButtonsWrapper>
             </MenuContainer>
-        </Fragment>
+        </Modal>
     );
 }

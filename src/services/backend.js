@@ -157,6 +157,10 @@ export const getChannelSchedule = async (channelId) => {
 };
 
 export const updateChannelSchedule = async (channelId, payload) => {
+    if (payload.alert_email_destination === '') {
+        // backend requires this field to be None if it's empty
+        delete payload.alert_email_destination;
+    }
     const response = await api.patch(`channels/${channelId}/schedule`, payload);
     return response.data;
 };

@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { FaBell, FaBellSlash } from 'react-icons/fa6';
+import { convertUtcToPst } from 'utils/time';
 
 import Switch from 'components/Queue/PostSettings/Switch';
 
@@ -16,7 +17,8 @@ const ClickableArea = styled.div`
     gap: 10px;
     cursor: pointer;
     padding: 5px;
-    padding-left: 20px;
+    padding-left: 10px;
+    padding-right: 10px;
     border-radius: 8px;
     transition: background-color 0.2s ease;
 
@@ -46,21 +48,35 @@ const IconPlaceholder = styled.span`
 const Separator = styled.span`
     border-left: 1px solid #dee2e6;
     height: 20px;
-    margin-left: 20px;
+    margin-left: 10px;
 `;
 
-export default function PostSettingDisplay({ settings, loading, onToggle, onOpenSettings }) {
+export default function PostSettingDisplay({ settings, onToggle, onOpenSettings }) {
     if (!settings) {
-        return <></>;
+        return <></>; // Return empty fragment if no settings
     }
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-    const { schedule_enabled, post_amount, post_interval, alert_enabled } = settings;
+    const { schedule_enabled, post_amount, post_interval, post_time, alert_enabled } = settings;
+    console.log('post_time', post_time);
+
     const vidText = post_amount === 1 ? 'vid' : 'vids';
     const dayText = post_interval === 1 ? 'day' : 'days';
-    const frequencyText = `${post_amount} ${vidText} / ${post_interval} ${dayText}`;
+    let frequencyText = `${post_amount} ${vidText} / ${post_interval} ${dayText}`;
+
+    // Add the post time if schedule is enabled and time is set
+    if (post_time) {
+        const pstTime = convertUtcToPst(post_time);
+        console.log('localized pstTime', pstTime);
+        if (pstTime) {
+            // Basic AM/PM formatting for display
+            const [hour, minute] = pstTime.split(':');
+            const hourNum = parseInt(hour, 10);
+            const ampm = hourNum >= 12 ? 'PM' : 'AM';
+            const displayHour = hourNum % 12 === 0 ? 12 : hourNum % 12; // Convert 0/12 to 12
+            const formattedTime = `${displayHour}:${minute} ${ampm} PST`;
+            frequencyText += ` at ${formattedTime}`;
+        }
+    }
 
     return (
         <WidgetContainer>
@@ -76,7 +92,7 @@ export default function PostSettingDisplay({ settings, loading, onToggle, onOpen
                 <FrequencyText disabled={!schedule_enabled}>{frequencyText}</FrequencyText>
                 {alert_enabled ? (
                     <IconPlaceholder
-                        alertEnabled
+                        $alertEnabled
                         disabled={!schedule_enabled}
                         title='Alerts Enabled'
                     >
