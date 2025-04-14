@@ -48,6 +48,7 @@ const ChannelQueueList = ({
     channelId,
     isLoading,
     error,
+    onPlayVideo,
 }) => {
     // Editing state is now managed within FileAsset
     // const [editingId, setEditingId] = useState(null);
@@ -76,9 +77,8 @@ const ChannelQueueList = ({
                 <FileAsset
                     key={asset.id}
                     asset={asset}
-                    // Pass channelId down so FileAsset can use the hook correctly
-                    // Remove props related to editing state and handlers
                     channelId={channelId}
+                    onThumbnailClick={onPlayVideo}
                 />
             ))}
             {assets.length === 0 && !isLoading && (

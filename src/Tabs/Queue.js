@@ -7,6 +7,7 @@ import PostMenu from 'components/Queue/PostMenu';
 import ChannelQueueList from 'components/Queue/ChannelQueueList';
 import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
 import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
+import PlayerModal from 'components/Queue/PlayerModal';
 
 const Container = styled.div`
     display: grid;
@@ -107,6 +108,7 @@ const AssetsView = () => {
     const [showPostMenu, setShowPostMenu] = useState(false);
     const [showPostSettings, setShowPostSettings] = useState(false);
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
+    const [playingAsset, setPlayingAsset] = useState(null);
 
     const { assets, isLoading, error } = useQueue(highlightedChannel?.id);
 
@@ -205,6 +207,11 @@ const AssetsView = () => {
                     channelId={highlightedChannel?.id}
                     isLoading={isLoading}
                     error={error}
+                    onPlayVideo={(asset) => {
+                        if (asset) {
+                            setPlayingAsset(asset);
+                        }
+                    }}
                 />
                 <UploadButtonRow>
                     <ActionButton
@@ -245,6 +252,10 @@ const AssetsView = () => {
                     onClose={() => setShowPostSettings(false)}
                     onSave={handleSaveSettings}
                 />
+            )}
+
+            {playingAsset && (
+                <PlayerModal playingAsset={playingAsset} onClose={() => setPlayingAsset(null)} />
             )}
         </Container>
     );
