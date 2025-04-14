@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQueue } from 'hocs/queue';
 import { FiEdit, FiCheck, FiX, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
 import { ASSET_STATUS, STATUS_COLORS, FAILED_STATES, LOCKED_STATES } from 'constants/assetStatus';
+import ThumbnailButton from './ThumbnailButton';
 
 const Row = styled.div`
     display: grid;
@@ -13,13 +14,6 @@ const Row = styled.div`
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
-const Thumbnail = styled.img`
-    width: 90px;
-    height: 120px; // 3:4 aspect ratio for better vertical image display
-    object-fit: cover;
-    border-radius: 4px;
 `;
 
 const InfoSection = styled.div`
@@ -61,18 +55,22 @@ const StatusIndicator = styled.div`
     align-items: center;
     gap: 4px;
     font-size: 14px;
-    color: ${props => STATUS_COLORS[props.status] || '#666666'};
+    color: ${(props) => STATUS_COLORS[props.status] || '#666666'};
 `;
 
 const LoadingSpinner = styled.span`
     @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
     display: inline-block;
     width: 12px;
     height: 12px;
-    border: 2px solid #2196F3;
+    border: 2px solid #2196f3;
     border-top: 2px solid transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
@@ -93,8 +91,14 @@ const IconButton = styled.button`
     height: 32px;
     border: none;
     border-radius: 4px;
-    background: ${props => props.variant === 'danger' ? '#FF4444' : props.variant === 'primary' ? '#4CCF50' : '#f0f0f0'};
-    color: ${props => props.variant === 'danger' || props.variant === 'primary' ? 'white' : '#666'};
+    background: ${(props) =>
+        props.variant === 'danger'
+            ? '#FF4444'
+            : props.variant === 'primary'
+            ? '#4CCF50'
+            : '#f0f0f0'};
+    color: ${(props) =>
+        props.variant === 'danger' || props.variant === 'primary' ? 'white' : '#666'};
     cursor: pointer;
     transition: opacity 0.2s;
     &:hover {
@@ -106,7 +110,7 @@ const IconButton = styled.button`
     }
 `;
 
-const FileAsset = ({ asset, channelId }) => {
+const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
     const {
         updateTitle,
         postNow,
@@ -152,7 +156,11 @@ const FileAsset = ({ asset, channelId }) => {
 
     return (
         <Row>
-            <Thumbnail src={asset.thumbnail_url} alt={asset.title} />
+            <ThumbnailButton 
+                src={asset.thumbnail_url} 
+                alt={asset.title} 
+                onClick={() => onThumbnailClick(asset)} 
+            />
             <InfoSection>
                 <TitleSection>
                     <Title
@@ -219,7 +227,9 @@ const FileAsset = ({ asset, channelId }) => {
                 <IconButton
                     variant='primary'
                     onClick={() => postNow(asset.id)}
-                    disabled={asset.status !== ASSET_STATUS.PROCESSED || isActionInProgress(postActionKey)}
+                    disabled={
+                        asset.status !== ASSET_STATUS.PROCESSED || isActionInProgress(postActionKey)
+                    }
                     title='Post Now'
                 >
                     {isActionInProgress(postActionKey) ? '...' : <FiSend size={18} />}
@@ -228,8 +238,7 @@ const FileAsset = ({ asset, channelId }) => {
                     variant='danger'
                     onClick={() => deleteAsset(asset.id)}
                     disabled={
-                        LOCKED_STATES.includes(asset.status) ||
-                        isActionInProgress(deleteActionKey)
+                        LOCKED_STATES.includes(asset.status) || isActionInProgress(deleteActionKey)
                     }
                     title='Delete'
                 >
