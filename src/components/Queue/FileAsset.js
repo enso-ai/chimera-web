@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQueue } from 'hocs/queue';
 import { FiEdit, FiCheck, FiX, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
 import { ASSET_STATUS, STATUS_COLORS, FAILED_STATES, LOCKED_STATES } from 'constants/assetStatus';
+import ThumbnailButton from './ThumbnailButton';
 
 const Row = styled.div`
     display: grid;
@@ -13,31 +14,6 @@ const Row = styled.div`
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
-const ThumbnailButton = styled.div`
-    width: 90px;
-    height: 120px;
-    padding: 0;
-    border: none;
-    background: none;
-    cursor: pointer;
-    display: block;
-    line-height: 0;
-    border-radius: 4px;
-    overflow: hidden;
-
-    &:hover {
-        outline: 2px solid #5f5f5f;
-        outline-offset: 2px;
-    }
-
-    img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
 `;
 
 const InfoSection = styled.div`
@@ -180,9 +156,11 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
 
     return (
         <Row>
-            <ThumbnailButton onClick={() => onThumbnailClick(asset)}>
-                <img src={asset.thumbnail_url} alt={asset.title} />
-            </ThumbnailButton>
+            <ThumbnailButton 
+                src={asset.thumbnail_url} 
+                alt={asset.title} 
+                onClick={() => onThumbnailClick(asset)} 
+            />
             <InfoSection>
                 <TitleSection>
                     <Title
