@@ -2,7 +2,12 @@ import { styled } from 'styled-components';
 import { useState, useEffect, useCallback } from 'react';
 import { useQueue } from 'hocs/queue';
 import { FiEdit, FiCheck, FiX, FiRefreshCw, FiSend, FiTrash2 } from 'react-icons/fi';
-import { ASSET_STATUS, STATUS_COLORS, FAILED_STATES, LOCKED_STATES } from 'constants/assetStatus';
+import {
+    ASSET_STATUS,
+    STATUS_COLORS,
+    PROCESSABLE_STATES,
+    LOCKED_STATES,
+} from 'constants/assetStatus';
 import ThumbnailButton from './ThumbnailButton';
 
 const Row = styled.div`
@@ -156,10 +161,10 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
 
     return (
         <Row>
-            <ThumbnailButton 
-                src={asset.thumbnail_url} 
-                alt={asset.title} 
-                onClick={() => onThumbnailClick(asset)} 
+            <ThumbnailButton
+                src={asset.thumbnail_url}
+                alt={asset.title}
+                onClick={() => onThumbnailClick(asset)}
             />
             <InfoSection>
                 <TitleSection>
@@ -217,7 +222,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                 <IconButton
                     onClick={() => reprocessAsset(asset.id)}
                     disabled={
-                        !FAILED_STATES.includes(asset.status) ||
+                        !PROCESSABLE_STATES.includes(asset.status) ||
                         isActionInProgress(reprocessActionKey)
                     }
                     title='Reprocess'
