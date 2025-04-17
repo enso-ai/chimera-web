@@ -345,10 +345,15 @@ export const QueueProvider = ({ children }) => {
                         clearInterval(intervalId);
                         state.pollingPostStatus.delete(assetId);
 
-                        // Update asset status
+                        // Update asset status and include failed_reason if status is posting_failed
+                        const assetUpdate = { id: assetId, status };
+                        if (status === ASSET_STATUS.POSTING_FAILED && response.failed_reason) {
+                            assetUpdate.failed_reason = response.failed_reason;
+                        }
+
                         dispatch({
                             type: actionTypes.SET_ASSET,
-                            payload: { channelId, asset: { id: assetId, status } },
+                            payload: { channelId, asset: assetUpdate },
                         });
                     }
                 } catch (error) {

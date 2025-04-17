@@ -61,6 +61,52 @@ const StatusIndicator = styled.div`
     gap: 4px;
     font-size: 14px;
     color: ${(props) => STATUS_COLORS[props.status] || '#666666'};
+    user-select: none;
+    position: relative; // Needed for tooltip positioning
+`;
+
+const TooltipText = styled.span`
+    visibility: hidden;
+    width: max-content;
+    max-width: 200px; /* Adjust as needed */
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 8px;
+    position: absolute;
+    z-index: 1;
+    top: 125%; /* Position below the text */
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 11px; /* Smaller font for tooltip */
+    font-weight: normal; /* Normal weight for tooltip */
+    white-space: pre-wrap; /* Allow wrapping */
+
+    /* Tooltip arrow */
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 100%; /* Arrow points up */
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: transparent transparent #555 transparent; /* Arrow color */
+    }
+`;
+
+// Container to manage hover state for the tooltip (copied from previous attempt)
+const StatusContainer = styled.div`
+    position: relative;
+    display: inline-block; // Or block, depending on layout needs
+
+    &:hover ${TooltipText} {
+        visibility: visible;
+        opacity: 1;
+    }
 `;
 
 const LoadingSpinner = styled.span`
@@ -208,14 +254,26 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                     )}
                 </TitleSection>
                 <StatusSection>
-                    <StatusIndicator status={asset.status}>
-                        {asset.status === ASSET_STATUS.POSTING ? <LoadingSpinner /> : '●'}
-                        {asset.status === ASSET_STATUS.PROCESS_FAILED
-                            ? 'Processing Failed'
-                            : asset.status === ASSET_STATUS.POSTING_FAILED
-                            ? 'Posting Failed'
-                            : asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
-                    </StatusIndicator>
+                    <StatusContainer>
+                        <StatusIndicator
+                            status={asset.status}
+                            hasTooltip={
+                                asset.status === ASSET_STATUS.POSTING_FAILED && asset.failed_reason
+                            }
+                        >
+                            {asset.status === ASSET_STATUS.POSTING ? <LoadingSpinner /> : '●'}
+                            {asset.status === ASSET_STATUS.PROCESSING_FAILED // Keep existing status text logic
+                                ? 'Processing Failed'
+                                : asset.status === ASSET_STATUS.POSTING_FAILED
+                                ? 'Posting Failed'
+                                : asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
+                            {/* Conditionally render TooltipText */}
+                            {asset.status === ASSET_STATUS.POSTING_FAILED &&
+                                asset.failed_reason && (
+                                    <TooltipText>{asset.failed_reason}</TooltipText>
+                                )}
+                        </StatusIndicator>
+                    </StatusContainer>
                 </StatusSection>
             </InfoSection>
             <ActionButtons>
