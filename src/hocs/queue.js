@@ -13,6 +13,7 @@ import {
     deleteAssets,
     processAsset,
     getPostStatus,
+    getAssetStatus, // Import the new function
 } from 'services/backend';
 import { ASSET_STATUS, TERMINAL_STATES, LOCKED_STATES } from 'constants/assetStatus';
 
@@ -432,7 +433,7 @@ export const QueueProvider = ({ children }) => {
                 }
 
                 try {
-                    await getPostStatus(assetId);
+                    await getAssetStatus(assetId); // Use the correct function here
                     // If we get here, the asset still exists
                     state.pollingDeleteStatus.set(assetId, {
                         intervalId,

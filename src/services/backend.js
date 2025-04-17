@@ -151,6 +151,11 @@ export const getPostStatus = async (fileId) => {
     return response.data;
 };
 
+export const getAssetStatus = async (fileId) => {
+    const response = await api.get(`assets/${fileId}/status`);
+    return response.data;
+};
+
 export const getChannelSchedule = async (channelId) => {
     const response = await api.get(`channels/${channelId}/schedule`);
     return response.data;
