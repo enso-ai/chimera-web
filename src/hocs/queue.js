@@ -13,9 +13,15 @@ import {
     deleteAssets,
     processAsset,
     getPostStatus,
-    getAssetStatus, // Import the new function
+    getAssetStatus,
+    getAssetDetails, // Import the new function
 } from 'services/backend';
-import { ASSET_STATUS, TERMINAL_STATES, LOCKED_STATES } from 'constants/assetStatus';
+import {
+    ASSET_STATUS,
+    PROCESSING_TERMINAL_STATES,
+    POSTING_TERMINAL_STATES,
+    LOCKED_STATES
+} from 'constants/assetStatus';
 
 const QueueContext = createContext();
 
@@ -190,12 +196,12 @@ const PAGE_SIZE = 20; // Or adjust as needed
 const POLLING_INTERVAL = {
     POST: 3000, // 3 seconds
     DELETE: 3000, // 3 seconds
-    PROCESS: 10000, // 10 seconds
+    PROCESS: 3000, // 3 seconds
 };
 const MAX_POLLING_ATTEMPTS = {
-    POST: 12, // 36 seconds total (12 * 3s)
-    DELETE: 6, // 18 seconds total (6 * 3s)
-    PROCESS: 6, // 60 seconds total (6 * 10s)
+    POST: 20, // 60 seconds total (20 * 3s)
+    DELETE: 10, // 30 seconds total (10 * 3s)
+    PROCESS: 20, // 60 seconds total (20 * 3s)
 };
 
 export const QueueProvider = ({ children }) => {
@@ -346,7 +352,7 @@ export const QueueProvider = ({ children }) => {
                         attempts: newAttempts,
                     });
 
-                    if (TERMINAL_STATES.includes(status)) {
+                    if (POSTING_TERMINAL_STATES.includes(status)) {
                         // Terminal state reached
                         clearInterval(intervalId);
                         state.pollingPostStatus.delete(assetId);
@@ -409,8 +415,7 @@ export const QueueProvider = ({ children }) => {
                     clearInterval(intervalId);
                     state.pollingProcessStatus.delete(assetId);
                     console.warn(`Process polling timed out for asset ${assetId}`);
-                    // Optionally update status to indicate timeout/unknown state?
-                    // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
+                    dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
                     return;
                 }
 
@@ -425,31 +430,18 @@ export const QueueProvider = ({ children }) => {
                     });
 
                     // Check if processing is done (either success or failure)
-                    if (
-                        status === ASSET_STATUS.PROCESSED ||
-                        status === ASSET_STATUS.PROCESS_FAILED
-                    ) {
+                    if ( PROCESSING_TERMINAL_STATES.includes(status) ) {
                         clearInterval(intervalId);
                         state.pollingProcessStatus.delete(assetId);
 
+                        const newAsset = await getAssetDetails(assetId);
                         // Update asset in the queue
                         dispatch({
                             type: actionTypes.SET_ASSET,
-                            payload: {
-                                channelId,
-                                asset: {
-                                    id: assetId,
-                                    status,
-                                    // Include failed_reason if available on failure
-                                    ...(status === ASSET_STATUS.PROCESS_FAILED &&
-                                        response.failed_reason && {
-                                            failed_reason: response.failed_reason,
-                                        }),
-                                },
-                            },
+                            payload: { channelId, asset: newAsset },
                         });
                     }
-                    // If status is still 'uploaded' or 'processing', continue polling
+                    // If status is still 'pending' or 'processing', continue polling
                 } catch (error) {
                     console.error('Failed to poll processing status:', error);
                     // If we get a 404, the file may have been removed due to processing failure or other reasons
@@ -660,9 +652,17 @@ export const QueueProvider = ({ children }) => {
             // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'processing' } } });
 
             try {
-                await processAsset(assetId);
-                // Refresh the specific channel's queue after reprocessing to get updated status
-                refreshQueue(channelId);
+                const { status } = await processAsset(assetId);
+                console.log("Reprocess status:", status);
+                dispatch({
+                    type: actionTypes.SET_ASSET,
+                    payload: {
+                        channelId,
+                        asset: { id: assetId, status },
+                    }
+                });
+
+                startPollingProcessStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to reprocess asset:', error);
                 alert('Failed to reprocess video. Please try again.');
@@ -681,7 +681,7 @@ export const QueueProvider = ({ children }) => {
                 queue.assets.forEach((asset) => {
                     // Start polling if asset is uploaded or processing and not already being polled for processing
                     if (
-                        (asset.status === ASSET_STATUS.UPLOADED || asset.status === 'processing') && // 'processing' might be initial state from PostMenu
+                        (asset.status === ASSET_STATUS.PENDING || asset.status === ASSET_STATUS.PROCESSING) && // 'processing' might be initial state from PostMenu
                         !state.pollingProcessStatus.has(asset.id)
                     ) {
                         console.log(
