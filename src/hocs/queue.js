@@ -13,7 +13,8 @@ import {
     deleteAssets,
     processAsset,
     getPostStatus,
-    getAssetStatus, // Import the new function
+    getAssetStatus,
+    getAssetDetails, // Import the new function
 } from 'services/backend';
 import {
     ASSET_STATUS,
@@ -165,28 +166,6 @@ function queueReducer(state, action) {
                         assets: queueToRemoveFrom.assets.filter(
                             (a) => a.id !== action.payload.assetId
                         ),
-                    },
-                },
-            };
-        case actionTypes.SET_ASSET_STATUS:
-            const queueToUpdate = state.queues[action.payload.channelId];
-            if (!queueToUpdate) return state;
-            const assetIndex = queueToUpdate.assets.findIndex(
-                (a) => a.id === action.payload.assetId
-            );
-            if (assetIndex === -1) return state; // Asset not found
-            const updatedAssets = [...queueToUpdate.assets];
-            updatedAssets[assetIndex] = {
-                ...updatedAssets[assetIndex],
-                status: action.payload.status,
-            };
-            return {
-                ...state,
-                queues: {
-                    ...state.queues,
-                    [action.payload.channelId]: {
-                        ...queueToUpdate,
-                        assets: updatedAssets,
                     },
                 },
             };
@@ -685,7 +664,13 @@ export const QueueProvider = ({ children }) => {
             try {
                 const { status } = await processAsset(assetId);
                 console.log("Reprocess status:", status);
-                dispatch({type: actionTypes.SET_ASSET_STATUS, payload: { channelId, assetId, status }});
+                dispatch({
+                    type: actionTypes.SET_ASSET,
+                    payload: {
+                        channelId,
+                        asset: { id: assetId, status },
+                    }
+                });
 
                 startPollingProcessStatus(channelId, assetId);
             } catch (error) {
