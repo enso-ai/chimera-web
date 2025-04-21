@@ -163,6 +163,28 @@ function queueReducer(state, action) {
                     },
                 },
             };
+        case actionTypes.SET_ASSET_STATUS:
+            const queueToUpdate = state.queues[action.payload.channelId];
+            if (!queueToUpdate) return state;
+            const assetIndex = queueToUpdate.assets.findIndex(
+                (a) => a.id === action.payload.assetId
+            );
+            if (assetIndex === -1) return state; // Asset not found
+            const updatedAssets = [...queueToUpdate.assets];
+            updatedAssets[assetIndex] = {
+                ...updatedAssets[assetIndex],
+                status: action.payload.status,
+            };
+            return {
+                ...state,
+                queues: {
+                    ...state.queues,
+                    [action.payload.channelId]: {
+                        ...queueToUpdate,
+                        assets: updatedAssets,
+                    },
+                },
+            };
         case actionTypes.ACTION_START:
             return {
                 ...state,
@@ -190,7 +212,7 @@ const PAGE_SIZE = 20; // Or adjust as needed
 const POLLING_INTERVAL = {
     POST: 3000, // 3 seconds
     DELETE: 3000, // 3 seconds
-    PROCESS: 10000, // 10 seconds
+    PROCESS: 5000, // 10 seconds
 };
 const MAX_POLLING_ATTEMPTS = {
     POST: 12, // 36 seconds total (12 * 3s)
@@ -660,9 +682,11 @@ export const QueueProvider = ({ children }) => {
             // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'processing' } } });
 
             try {
-                await processAsset(assetId);
-                // Refresh the specific channel's queue after reprocessing to get updated status
-                refreshQueue(channelId);
+                const { status } = await processAsset(assetId);
+                console.log("Reprocess status:", status);
+                dispatch({type: actionTypes.SET_ASSET_STATUS, payload: { channelId, assetId, status }});
+
+                startPollingProcessStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to reprocess asset:', error);
                 alert('Failed to reprocess video. Please try again.');
