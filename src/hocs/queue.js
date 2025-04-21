@@ -15,7 +15,12 @@ import {
     getPostStatus,
     getAssetStatus, // Import the new function
 } from 'services/backend';
-import { ASSET_STATUS, TERMINAL_STATES, LOCKED_STATES } from 'constants/assetStatus';
+import {
+    ASSET_STATUS,
+    PROCESSING_TERMINAL_STATES,
+    POSTING_TERMINAL_STATES,
+    LOCKED_STATES
+} from 'constants/assetStatus';
 
 const QueueContext = createContext();
 
@@ -368,7 +373,7 @@ export const QueueProvider = ({ children }) => {
                         attempts: newAttempts,
                     });
 
-                    if (TERMINAL_STATES.includes(status)) {
+                    if (POSTING_TERMINAL_STATES.includes(status)) {
                         // Terminal state reached
                         clearInterval(intervalId);
                         state.pollingPostStatus.delete(assetId);
@@ -447,10 +452,7 @@ export const QueueProvider = ({ children }) => {
                     });
 
                     // Check if processing is done (either success or failure)
-                    if (
-                        status === ASSET_STATUS.PROCESSED ||
-                        status === ASSET_STATUS.PROCESS_FAILED
-                    ) {
+                    if ( PROCESSING_TERMINAL_STATES.includes(status) ) {
                         clearInterval(intervalId);
                         state.pollingProcessStatus.delete(assetId);
 
@@ -463,7 +465,7 @@ export const QueueProvider = ({ children }) => {
                                     id: assetId,
                                     status,
                                     // Include failed_reason if available on failure
-                                    ...(status === ASSET_STATUS.PROCESS_FAILED &&
+                                    ...(status === ASSET_STATUS.PROCESSING_FAILED &&
                                         response.failed_reason && {
                                             failed_reason: response.failed_reason,
                                         }),
@@ -705,7 +707,7 @@ export const QueueProvider = ({ children }) => {
                 queue.assets.forEach((asset) => {
                     // Start polling if asset is uploaded or processing and not already being polled for processing
                     if (
-                        (asset.status === ASSET_STATUS.UPLOADED || asset.status === 'processing') && // 'processing' might be initial state from PostMenu
+                        (asset.status === ASSET_STATUS.PENDING || asset.status === ASSET_STATUS.PROCESSING) && // 'processing' might be initial state from PostMenu
                         !state.pollingProcessStatus.has(asset.id)
                     ) {
                         console.log(
