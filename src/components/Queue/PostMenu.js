@@ -200,16 +200,40 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
             
             // Process asset
             updateFileStatus(fileItem.id, { status: 'processing', progress: 50 });
-            await processAsset(object_key);
-            
-            // Complete
-            updateFileStatus(fileItem.id, { status: 'complete', progress: 100 });
-            // onSuccess(object_key); // Call the original onSuccess prop passed from Queue.js
-            // No need to call refreshQueue here directly, as it will be triggered
-            // when the last file finishes processing below.
+            try {
+                const processResponse = await processAsset(object_key);
+                
+                // Update with the actual returned status if it exists
+                if (processResponse.status) {
+                    updateFileStatus(fileItem.id, { 
+                        status: processResponse.status, 
+                        progress: 100 
+                    });
+                }
+                // No need to call onSuccess or refreshQueue here, 
+                // the polling mechanism in queue.js will handle status updates.
+            } catch (processError) {
+                // Specific handling for 404 errors (file not found on S3)
+                if (processError.code === 404) {
+                    console.error('Processing failed (404): File not found on S3 for key:', object_key);
+                    updateFileStatus(fileItem.id, {
+                        status: 'error',
+                        error: 'File not available on storage server. Upload failed.',
+                        progress: 0 // Reset progress as the core issue is upload-related
+                    });
+                } else {
+                    // For other processing errors, show the error but keep progress at 50
+                    console.error('Error processing asset:', processError);
+                    updateFileStatus(fileItem.id, {
+                        status: 'error',
+                        error: processError.message || 'Processing failed',
+                        progress: 50 // Keep progress to indicate upload succeeded
+                    });
+                }
+            }
 
-        } catch (error) {
-            console.error('Error uploading file:', error);
+        } catch (error) { // Outer catch for S3 upload errors etc.
+            console.error('Error during upload process:', error);
             updateFileStatus(fileItem.id, {
                 status: 'error',
                 error: error.message || 'Upload failed',
