@@ -213,7 +213,7 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
             <Overlay onClick={handleClose} />
             <DialogContainer>
                 <CloseButton onClick={handleClose} disabled={isLoading}>
-                    <FiX size={27} color="#333" />
+                    <FiX size={27} color='#333' />
                 </CloseButton>
                 <Header>
                     <Title>GCS Ingest for {channel?.display_name || 'Channel'}</Title>
@@ -233,7 +233,10 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
                             <InfoList>
                                 <InfoListItem>
                                     <Checkmark>✓</Checkmark>
-                                    GCS folder must contain a <CodeSnippet>data.json</CodeSnippet> file
+                                    GCS folder must contain a <CodeSnippet>
+                                        data.json
+                                    </CodeSnippet>{' '}
+                                    file
                                 </InfoListItem>
                                 <InfoListItem>
                                     <Checkmark>✓</Checkmark>
@@ -241,7 +244,9 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
                                 </InfoListItem>
                                 <InfoListItem>
                                     <Checkmark>✓</Checkmark>
-                                    Each object needs <CodeSnippet>video_filename</CodeSnippet> and <CodeSnippet>video_title</CodeSnippet>
+                                    Each object needs <CodeSnippet>
+                                        video_filename
+                                    </CodeSnippet> and <CodeSnippet>video_title</CodeSnippet>
                                 </InfoListItem>
                             </InfoList>
                         </InfoBox>
@@ -249,13 +254,13 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
                     {/* End of Updated Instructions Section */}
 
                     <div>
-                        <InputLabel htmlFor="gcs-job-id">GCS Job ID:</InputLabel>
+                        <InputLabel htmlFor='gcs-job-id'>GCS Job ID:</InputLabel>
                         <InputField
-                            id="gcs-job-id"
-                            type="text"
+                            id='gcs-job-id'
+                            type='text'
                             value={jobId}
                             onChange={(e) => setJobId(e.target.value)}
-                            placeholder="UUID"
+                            placeholder='UUID'
                             disabled={isLoading}
                         />
                     </div>
@@ -264,16 +269,12 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
 
                 <ButtonRow>
                     {/* Use imported Button with 'secondary' variant */}
-                    <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
+                    <Button variant='secondary' onClick={handleClose} disabled={isLoading}>
                         Cancel
                     </Button>
                     {/* Use imported Button with specific orange color */}
                     {/* Use imported Button with specific orange color via the new 'color' prop */}
-                    <Button
-                        onClick={handleConfirm}
-                        disabled={isLoading || !jobId.trim()}
-                        color="#FF6D00" 
-                    >
+                    <Button primary onClick={handleConfirm} disabled={isLoading || !jobId.trim()}>
                         {isLoading ? 'Starting...' : 'Confirm'}
                     </Button>
                 </ButtonRow>

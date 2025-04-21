@@ -4,6 +4,7 @@ import { getSignedUrl, processAsset } from 'services/backend';
 import { useQueue } from 'hocs/queue'; // Import the context hook
 import FileDropZone from './FileDropZone';
 import FileList from './FileList';
+import { ConfirmButton, CancelButton } from 'components/Button'; // Import the refactored Button
 
 const Overlay = styled.div`
     position: fixed;
@@ -51,10 +52,10 @@ const CloseButton = styled.button`
     background: none;
     border: none;
     font-size: 32px;
-    cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-    opacity: ${props => props.disabled ? 0.5 : 1};
+    cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${(props) => (props.disabled ? 0.5 : 1)};
     color: #666;
-    
+
     &:hover {
         color: #333;
     }
@@ -66,39 +67,12 @@ const ButtonRow = styled.div`
     margin-top: 8px;
 `;
 
-const Button = styled.button`
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-    opacity: ${props => props.disabled ? 0.5 : 1};
-    transition: all 0.2s ease;
-    
-    ${props => props.primary ? `
-        background-color: #4CCF50;
-        color: white;
-        border: none;
-        
-        &:hover {
-            background-color: #45b948;
-        }
-    ` : `
-        background-color: #f5f5f5;
-        color: #666;
-        border: 1px solid #ddd;
-        
-        &:hover {
-            background-color: #eee;
-        }
-    `}
-`;
-
 const generateFileKey = (file) => {
     const identifier = {
         name: file.name,
         size: file.size,
         lastModified: file.lastModified,
-        type: file.type
+        type: file.type,
     };
     return JSON.stringify(identifier);
 };
@@ -114,7 +88,8 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
         const handleBeforeUnload = (e) => {
             if (isUploading) {
                 e.preventDefault();
-                e.returnValue = 'Files are still uploading. If you leave, uploads will be cancelled.';
+                e.returnValue =
+                    'Files are still uploading. If you leave, uploads will be cancelled.';
                 return e.returnValue;
             }
         };
@@ -127,16 +102,14 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
     }, [isUploading]);
 
     const updateFileStatus = useCallback((fileId, updates) => {
-        setFiles(current => 
-            current.map(file => 
-                file.id === fileId ? { ...file, ...updates } : file
-            )
+        setFiles((current) =>
+            current.map((file) => (file.id === fileId ? { ...file, ...updates } : file))
         );
     }, []);
 
     const handleFilesSelected = (newFiles) => {
         const validFiles = newFiles
-            .map(file => {
+            .map((file) => {
                 const fileKey = generateFileKey(file);
                 if (fileMapRef.current.has(fileKey)) {
                     return null;
@@ -150,15 +123,15 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
                     title: file.name.replace(/\.[^/.]+$/, ''), // Default title from filename
                     status: 'waiting',
                     progress: 0,
-                    error: null
+                    error: null,
                 };
-                
+
                 fileMapRef.current.set(fileKey, fileItem);
                 return fileItem;
             })
             .filter(Boolean);
 
-        setFiles(current => [...current, ...validFiles]);
+        setFiles((current) => [...current, ...validFiles]);
     };
 
     const handleTitleChange = (fileId, newTitle) => {
@@ -170,11 +143,11 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
             // Get signed URL
             updateFileStatus(fileItem.id, { status: 'getting-url', progress: 0 });
             const { signed_url, object_key } = await getSignedUrl(channel.id, fileItem.title);
-            
+
             // Upload to S3
             updateFileStatus(fileItem.id, { status: 'uploading', progress: 0 });
             const xhr = new XMLHttpRequest();
-            
+
             await new Promise((resolve, reject) => {
                 xhr.upload.onprogress = (event) => {
                     if (event.lengthComputable) {
@@ -182,7 +155,7 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
                         updateFileStatus(fileItem.id, { progress });
                     }
                 };
-                
+
                 xhr.onload = () => {
                     if (xhr.status === 200) {
                         resolve();
@@ -190,36 +163,39 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
                         reject(new Error(`Upload failed with status ${xhr.status}`));
                     }
                 };
-                
+
                 xhr.onerror = () => reject(new Error('Upload failed'));
-                
+
                 xhr.open('PUT', signed_url);
                 xhr.setRequestHeader('Content-Type', 'application/octet-stream');
                 xhr.send(fileItem.file);
             });
-            
+
             // Process asset
             updateFileStatus(fileItem.id, { status: 'processing', progress: 50 });
             try {
                 const processResponse = await processAsset(object_key);
-                
+
                 // Update with the actual returned status if it exists
                 if (processResponse.status) {
-                    updateFileStatus(fileItem.id, { 
-                        status: processResponse.status, 
-                        progress: 100 
+                    updateFileStatus(fileItem.id, {
+                        status: processResponse.status,
+                        progress: 100,
                     });
                 }
-                // No need to call onSuccess or refreshQueue here, 
+                // No need to call onSuccess or refreshQueue here,
                 // the polling mechanism in queue.js will handle status updates.
             } catch (processError) {
                 // Specific handling for 404 errors (file not found on S3)
                 if (processError.code === 404) {
-                    console.error('Processing failed (404): File not found on S3 for key:', object_key);
+                    console.error(
+                        'Processing failed (404): File not found on S3 for key:',
+                        object_key
+                    );
                     updateFileStatus(fileItem.id, {
                         status: 'error',
                         error: 'File not available on storage server. Upload failed.',
-                        progress: 0 // Reset progress as the core issue is upload-related
+                        progress: 0, // Reset progress as the core issue is upload-related
                     });
                 } else {
                     // For other processing errors, show the error but keep progress at 50
@@ -227,43 +203,45 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
                     updateFileStatus(fileItem.id, {
                         status: 'error',
                         error: processError.message || 'Processing failed',
-                        progress: 50 // Keep progress to indicate upload succeeded
+                        progress: 50, // Keep progress to indicate upload succeeded
                     });
                 }
             }
-
-        } catch (error) { // Outer catch for S3 upload errors etc.
+        } catch (error) {
+            // Outer catch for S3 upload errors etc.
             console.error('Error during upload process:', error);
             updateFileStatus(fileItem.id, {
                 status: 'error',
                 error: error.message || 'Upload failed',
-                progress: 0
+                progress: 0,
             });
         }
     };
 
     const processNextInQueue = async () => {
         // Get next waiting file
-        const nextFile = files.find(f => f.status === 'waiting');
+        const nextFile = files.find((f) => f.status === 'waiting');
 
         if (!nextFile) {
             // Check if all files are processed (complete or error)
-            const allProcessed = files.every(f => f.status === 'complete' || f.status === 'error');
+            const allProcessed = files.every(
+                (f) => f.status === 'complete' || f.status === 'error'
+            );
             if (allProcessed && files.length > 0) {
-                 // All uploads finished, trigger refresh for the channel
-                 if (channel?.id) {
+                // All uploads finished, trigger refresh for the channel
+                if (channel?.id) {
                     refreshQueue(); // Refresh the queue via context hook
-                 }
-                 setJobDone(true); // Mark job as done
-                 onSuccess(); // Call the original success handler from Queue.js
+                }
+                setJobDone(true); // Mark job as done
+                onSuccess(); // Call the original success handler from Queue.js
             }
             return;
         }
 
         // Check concurrency limits
-        const gettingUrlCount = files.filter(f => f.status === 'getting-url').length;
-        const uploadingCount = files.filter(f => f.status === 'uploading').length;
-        const processingCount = files.filter(f => f.status === 'processing').length;
+        const gettingUrlCount = files.filter((f) => f.status === 'getting-url').length;
+        const uploadingCount = files.filter((f) => f.status === 'uploading').length;
+        const processingCount = files.filter((f) => f.status === 'processing').length;
 
         if (gettingUrlCount >= 1 || uploadingCount >= 1 || processingCount >= 2) {
             return;
@@ -283,8 +261,9 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
         setIsUploading(true);
     };
 
-    const canStartUpload = files.length > 0 && 
-        files.every(f => f.title.trim() && (f.status === 'waiting' || f.status === 'error'));
+    const canStartUpload =
+        files.length > 0 &&
+        files.every((f) => f.title.trim() && (f.status === 'waiting' || f.status === 'error'));
 
     return (
         <>
@@ -292,10 +271,7 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
             <MenuContainer>
                 <Header>
                     <Title>Post to {channel.display_name}</Title>
-                    <CloseButton 
-                        onClick={isUploading ? undefined : onClose}
-                        disabled={isUploading}
-                    >
+                    <CloseButton onClick={isUploading ? undefined : onClose} disabled={isUploading}>
                         ×
                     </CloseButton>
                 </Header>
@@ -309,43 +285,34 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
                     />
                 )}
 
-                <FileList
-                    files={files}
-                    onTitleChange={handleTitleChange}
-                    disabled={isUploading}
-                />
+                <FileList files={files} onTitleChange={handleTitleChange} disabled={isUploading} />
 
-                {
-                    jobDone ? (
-                        <ButtonRow>
-                            <Button
-                                onClick={() => {
-                                    setJobDone(false);
-                                    setFiles([]);
-                                    onClose();
-                                }}
-                            >
-                                Close
-                            </Button>
-                        </ButtonRow>
-                    ) : (
-                        <ButtonRow>
-                            <Button
-                                onClick={onClose}
-                                disabled={isUploading}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                primary
-                                onClick={startUploads}
-                                disabled={isUploading || !canStartUpload}
-                            >
-                                {isUploading ? 'Uploading...' : 'Schedule'}
-                            </Button>
-                        </ButtonRow>
-                    )
-                }
+                {jobDone ? (
+                    <ButtonRow>
+                        <ConfirmButton
+                            onClick={() => {
+                                setJobDone(false);
+                                setFiles([]);
+                                onClose();
+                            }}
+                        >
+                            Close
+                        </ConfirmButton>
+                    </ButtonRow>
+                ) : (
+                    <ButtonRow>
+                        <CancelButton onClick={onClose} disabled={isUploading}>
+                            Cancel
+                        </CancelButton>
+                        <ConfirmButton
+                            primary
+                            onClick={startUploads}
+                            disabled={isUploading || !canStartUpload}
+                        >
+                            {isUploading ? 'Uploading...' : 'Schedule'}
+                        </ConfirmButton>
+                    </ButtonRow>
+                )}
             </MenuContainer>
         </>
     );
