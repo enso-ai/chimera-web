@@ -441,7 +441,7 @@ export const QueueProvider = ({ children }) => {
                             payload: { channelId, asset: newAsset },
                         });
                     }
-                    // If status is still 'uploaded' or 'processing', continue polling
+                    // If status is still 'pending' or 'processing', continue polling
                 } catch (error) {
                     console.error('Failed to poll processing status:', error);
                     // If we get a 404, the file may have been removed due to processing failure or other reasons
