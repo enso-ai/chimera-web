@@ -24,6 +24,7 @@ const initialState = {
     actionsInProgress: new Set(), // Track ongoing API calls for specific assets (e.g., 'delete-assetId')
     pollingPostStatus: new Map(), // Track active post status polling { assetId: { intervalId: number, attempts: number } }
     pollingDeleteStatus: new Map(), // Track active delete status polling { assetId: { intervalId: number, attempts: number, channelId: string } }
+    pollingProcessStatus: new Map(), // Track active processing status polling { assetId: { intervalId: number, attempts: number } }
 };
 
 const actionTypes = {
@@ -186,10 +187,15 @@ function queueReducer(state, action) {
 }
 
 const PAGE_SIZE = 20; // Or adjust as needed
-const POLLING_INTERVAL = 3000; // 5 seconds
+const POLLING_INTERVAL = {
+    POST: 3000, // 3 seconds
+    DELETE: 3000, // 3 seconds
+    PROCESS: 10000, // 10 seconds
+};
 const MAX_POLLING_ATTEMPTS = {
-    POST: 12, //36 seconds total (12 * 3000ms)
-    DELETE: 6, // 18 seconds total (6 * 3000ms)
+    POST: 12, // 36 seconds total (12 * 3s)
+    DELETE: 6, // 18 seconds total (6 * 3s)
+    PROCESS: 6, // 60 seconds total (6 * 10s)
 };
 
 export const QueueProvider = ({ children }) => {
@@ -364,7 +370,7 @@ export const QueueProvider = ({ children }) => {
                         attempts: newAttempts,
                     });
                 }
-            }, POLLING_INTERVAL);
+            }, POLLING_INTERVAL.POST);
 
             // Initialize polling state
             state.pollingPostStatus.set(assetId, {
@@ -385,6 +391,103 @@ export const QueueProvider = ({ children }) => {
         },
         [state.pollingPostStatus]
     );
+
+    // --- Start Polling for Processing Status ---
+    const startPollingProcessStatus = useCallback(
+        (channelId, assetId) => {
+            // Clear any existing polling for this asset
+            if (state.pollingProcessStatus.has(assetId)) {
+                clearInterval(state.pollingProcessStatus.get(assetId).intervalId);
+            }
+
+            const intervalId = setInterval(async () => {
+                const pollState = state.pollingProcessStatus.get(assetId);
+                if (!pollState) return; // Polling was stopped
+
+                const newAttempts = pollState.attempts + 1;
+                if (newAttempts > MAX_POLLING_ATTEMPTS.PROCESS) {
+                    clearInterval(intervalId);
+                    state.pollingProcessStatus.delete(assetId);
+                    console.warn(`Process polling timed out for asset ${assetId}`);
+                    // Optionally update status to indicate timeout/unknown state?
+                    // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
+                    return;
+                }
+
+                try {
+                    const response = await getAssetStatus(assetId);
+                    const status = response.status;
+
+                    // Update polling attempts
+                    state.pollingProcessStatus.set(assetId, {
+                        intervalId,
+                        attempts: newAttempts,
+                    });
+
+                    // Check if processing is done (either success or failure)
+                    if (
+                        status === ASSET_STATUS.PROCESSED ||
+                        status === ASSET_STATUS.PROCESS_FAILED
+                    ) {
+                        clearInterval(intervalId);
+                        state.pollingProcessStatus.delete(assetId);
+
+                        // Update asset in the queue
+                        dispatch({
+                            type: actionTypes.SET_ASSET,
+                            payload: {
+                                channelId,
+                                asset: {
+                                    id: assetId,
+                                    status,
+                                    // Include failed_reason if available on failure
+                                    ...(status === ASSET_STATUS.PROCESS_FAILED &&
+                                        response.failed_reason && {
+                                            failed_reason: response.failed_reason,
+                                        }),
+                                },
+                            },
+                        });
+                    }
+                    // If status is still 'uploaded' or 'processing', continue polling
+                } catch (error) {
+                    console.error('Failed to poll processing status:', error);
+                    // If we get a 404, the file may have been removed due to processing failure or other reasons
+                    if (error.code === 404) {
+                        clearInterval(intervalId);
+                        state.pollingProcessStatus.delete(assetId);
+                        // Optionally remove the asset from the queue if it's gone
+                        // dispatch({ type: actionTypes.REMOVE_ASSET, payload: { channelId, assetId } });
+                    } else {
+                        // Other error, continue polling
+                        state.pollingProcessStatus.set(assetId, {
+                            intervalId,
+                            attempts: newAttempts,
+                        });
+                    }
+                }
+            }, POLLING_INTERVAL.PROCESS);
+
+            // Initialize polling state
+            state.pollingProcessStatus.set(assetId, {
+                intervalId,
+                attempts: 0,
+            });
+        },
+        [state.pollingProcessStatus, dispatch]
+    );
+
+    const stopPollingProcessStatus = useCallback(
+        (assetId) => {
+            const pollState = state.pollingProcessStatus.get(assetId);
+            if (pollState) {
+                clearInterval(pollState.intervalId);
+                state.pollingProcessStatus.delete(assetId);
+            }
+        },
+        [state.pollingProcessStatus]
+    );
+    // --- End Polling for Processing Status ---
 
     const handlePostNow = useCallback(
         async (channelId, assetId) => {
@@ -463,7 +566,7 @@ export const QueueProvider = ({ children }) => {
                         });
                     }
                 }
-            }, POLLING_INTERVAL);
+            }, POLLING_INTERVAL.DELETE);
 
             // Initialize polling state
             state.pollingDeleteStatus.set(assetId, {
@@ -568,8 +671,55 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [refreshQueue, isActionInProgress]
+        [refreshQueue, isActionInProgress, startPollingProcessStatus] // Added startPollingProcessStatus dependency
     );
+
+    // Effect to automatically start polling for assets in relevant states
+    useEffect(() => {
+        Object.entries(state.queues).forEach(([channelId, queue]) => {
+            if (queue && queue.assets) {
+                queue.assets.forEach((asset) => {
+                    // Start polling if asset is uploaded or processing and not already being polled for processing
+                    if (
+                        (asset.status === ASSET_STATUS.UPLOADED || asset.status === 'processing') && // 'processing' might be initial state from PostMenu
+                        !state.pollingProcessStatus.has(asset.id)
+                    ) {
+                        console.log(
+                            `Starting process polling for asset ${asset.id} with status ${asset.status}`
+                        );
+                        startPollingProcessStatus(channelId, asset.id);
+                    }
+
+                    // Start polling if asset is posting and not already being polled for posting
+                    if (
+                        asset.status === ASSET_STATUS.POSTING &&
+                        !state.pollingPostStatus.has(asset.id)
+                    ) {
+                        console.log(`Starting post polling for asset ${asset.id}`);
+                        startPollingPostStatus(channelId, asset.id);
+                    }
+
+                    // Start polling if asset is deleting and not already being polled for deletion
+                    if (
+                        asset.status === ASSET_STATUS.DELETING &&
+                        !state.pollingDeleteStatus.has(asset.id)
+                    ) {
+                        console.log(`Starting delete polling for asset ${asset.id}`);
+                        startPollingDeleteStatus(channelId, asset.id);
+                    }
+                });
+            }
+        });
+        // Dependencies: state.queues to re-run when assets change, and the polling start functions
+    }, [
+        state.queues,
+        startPollingProcessStatus,
+        startPollingPostStatus,
+        startPollingDeleteStatus,
+        state.pollingProcessStatus,
+        state.pollingPostStatus,
+        state.pollingDeleteStatus,
+    ]);
 
     // Add cleanup effect for polling intervals
     useEffect(() => {
@@ -584,11 +734,18 @@ export const QueueProvider = ({ children }) => {
                 clearInterval(pollState.intervalId);
             });
             state.pollingDeleteStatus.clear();
+
+            state.pollingProcessStatus.forEach((pollState, assetId) => {
+                clearInterval(pollState.intervalId);
+            });
+            state.pollingProcessStatus.clear();
         };
-    }, [state.pollingPostStatus, state.pollingDeleteStatus]);
+    }, [state.pollingPostStatus, state.pollingDeleteStatus, state.pollingProcessStatus]);
 
     const value = {
         getQueueState,
+        startPollingProcessStatus, // Expose the new polling function
+        stopPollingProcessStatus, // Expose the stop function
         fetchAllAssetsForChannel,
         refreshQueue,
         handleUpdateTitle,
