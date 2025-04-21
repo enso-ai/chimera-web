@@ -217,12 +217,12 @@ const PAGE_SIZE = 20; // Or adjust as needed
 const POLLING_INTERVAL = {
     POST: 3000, // 3 seconds
     DELETE: 3000, // 3 seconds
-    PROCESS: 5000, // 10 seconds
+    PROCESS: 3000, // 3 seconds
 };
 const MAX_POLLING_ATTEMPTS = {
-    POST: 12, // 36 seconds total (12 * 3s)
-    DELETE: 6, // 18 seconds total (6 * 3s)
-    PROCESS: 6, // 60 seconds total (6 * 10s)
+    POST: 20, // 60 seconds total (20 * 3s)
+    DELETE: 10, // 30 seconds total (10 * 3s)
+    PROCESS: 20, // 60 seconds total (20 * 3s)
 };
 
 export const QueueProvider = ({ children }) => {
@@ -436,8 +436,7 @@ export const QueueProvider = ({ children }) => {
                     clearInterval(intervalId);
                     state.pollingProcessStatus.delete(assetId);
                     console.warn(`Process polling timed out for asset ${assetId}`);
-                    // Optionally update status to indicate timeout/unknown state?
-                    // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
+                    dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
                     return;
                 }
 
