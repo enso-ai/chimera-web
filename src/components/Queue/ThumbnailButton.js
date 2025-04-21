@@ -1,5 +1,5 @@
 import { styled } from 'styled-components';
-import { FiPlay } from 'react-icons/fi';
+import { FiPlay, FiX } from 'react-icons/fi';
 
 const ButtonWrapper = styled.button`
     width: 90px;
@@ -51,7 +51,27 @@ const PlayIcon = styled(FiPlay)`
     height: 32px;
 `;
 
+const MissingVideoWrapper = styled.div`
+    width: 90px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    line-height: 0;
+    cursor: not-allowed;
+`
+
 export default function ThumbnailButton({ src, alt, onClick }) {
+    if (!src) {
+        return (
+            <MissingVideoWrapper>
+                <FiX size={40} color='red'/>
+            </MissingVideoWrapper>
+        )
+    }
+
     return (
         <ButtonWrapper onClick={onClick}>
             <ThumbnailImage src={src} alt={alt} />
