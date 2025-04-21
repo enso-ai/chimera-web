@@ -156,6 +156,19 @@ export const getAssetStatus = async (fileId) => {
     return response.data;
 };
 
+// GCS Ingestion
+export const ingestFromGCS = async (channelId, jobId) => {
+    try {
+        const response = await api.post(`channels/${channelId}/ingest_from_gcs`, { job_id: jobId });
+        return response.data; // Should return { status: "pending" } on success
+    } catch (error) {
+        console.error('Error ingesting from GCS:', error);
+        // Rethrow the error so the component can handle it (e.g., show error message)
+        // Include response data if available for more specific error handling
+        throw error.response?.data || error;
+    }
+};
+
 export const getChannelSchedule = async (channelId) => {
     const response = await api.get(`channels/${channelId}/schedule`);
     return response.data;
