@@ -434,21 +434,11 @@ export const QueueProvider = ({ children }) => {
                         clearInterval(intervalId);
                         state.pollingProcessStatus.delete(assetId);
 
+                        const newAsset = await getAssetDetails(assetId);
                         // Update asset in the queue
                         dispatch({
                             type: actionTypes.SET_ASSET,
-                            payload: {
-                                channelId,
-                                asset: {
-                                    id: assetId,
-                                    status,
-                                    // Include failed_reason if available on failure
-                                    ...(status === ASSET_STATUS.PROCESSING_FAILED &&
-                                        response.failed_reason && {
-                                            failed_reason: response.failed_reason,
-                                        }),
-                                },
-                            },
+                            payload: { channelId, asset: newAsset },
                         });
                     }
                     // If status is still 'uploaded' or 'processing', continue polling
