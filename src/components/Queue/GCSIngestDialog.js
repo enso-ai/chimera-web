@@ -190,7 +190,7 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
         } finally {
             setIsLoading(false);
         }
-    }, [jobId, channel, isLoading, onClose, onSuccess, refreshQueue]);
+    }, [jobId, channel, isLoading, onClose, onSuccess]);
 
     const handleClose = () => {
         if (!isLoading) {
