@@ -3,7 +3,6 @@ import { styled } from 'styled-components';
 import { FiX, FiInfo } from 'react-icons/fi'; // Added FiInfo
 
 import { ingestFromGCS } from 'services/backend';
-import { useQueue } from 'hocs/queue'; // To potentially refresh queue later if needed
 import { Button } from '../Button'; // Import the refactored Button
 
 // Reusing styled components from PostMenu or similar structure
@@ -170,7 +169,6 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
     const [jobId, setJobId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { refreshQueue } = useQueue(channel?.id); // Get refresh function
 
     const handleConfirm = useCallback(async () => {
         if (!jobId || isLoading || !channel?.id) return;
@@ -183,15 +181,7 @@ const GCSIngestDialog = ({ channel, onClose, onSuccess }) => {
             console.log('GCS Ingestion API Result:', result);
             // Assuming success if no error is thrown
             // The backend job starts, UI doesn't need to wait.
-            // Optionally, trigger a queue refresh after a short delay
-            // or rely on existing polling if the queue updates automatically.
-            setTimeout(() => {
-                if (channel?.id) {
-                    refreshQueue(); // Refresh queue to potentially show pending assets
-                }
-            }, 1000); // Delay refresh slightly
-            onSuccess(); // Notify parent component (Queue.js)
-            onClose(); // Close the dialog
+            onSuccess(channel.id); // Notify parent component, and close the dialog
         } catch (err) {
             console.error('GCS Ingestion Failed:', err);
             // Attempt to extract a user-friendly message

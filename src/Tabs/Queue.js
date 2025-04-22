@@ -97,7 +97,7 @@ const AssetsView = () => {
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
     const [playingAsset, setPlayingAsset] = useState(null);
 
-    const { assets, isLoading, error, fetchAllAssetsForChannel } = useQueue(highlightedChannel?.id);
+    const { assets, isLoading, error, refreshQueue } = useQueue(highlightedChannel?.id);
 
     useEffect(() => {
         if (channels && channels.length > 0) {
@@ -139,10 +139,11 @@ const AssetsView = () => {
     }, []);
 
     // Handler for successful GCS ingestion start
-    const handleGCSIngestSuccess = useCallback(() => {
+    const handleGCSIngestSuccess = useCallback((channel_id) => {
         console.log('GCS ingestion job started successfully.');
         // Queue refresh is handled within the dialog component
-        fetchAllAssetsForChannel(highlightedChannel.id);
+        refreshQueue();
+        setShowGCSIngestDialog(false);
     }, []);
 
     const handleToggle = useCallback(
