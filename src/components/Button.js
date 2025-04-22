@@ -59,7 +59,7 @@ const StyledButton = styled.button`
     font-size: 1em;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
     min-width: 100px;
 
     background-color: ${(props) => props.bgColor};
@@ -77,11 +77,10 @@ const StyledButton = styled.button`
     }
 
     &:disabled {
-        background-color: ${ButtonColors.DISABLED};
-        color: ${ButtonColors.DISABLED_TEXT};
-        border-color: ${ButtonColors.DISABLED}; // Use specific border color for disabled
+        /* FILTER APPROACH: Keep original color but apply grayscale filter */
+        filter: grayscale(40%) brightness(0.95);
         cursor: not-allowed;
-        opacity: 0.6;
+        opacity: 0.7;
     }
 `;
 
