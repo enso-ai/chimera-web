@@ -18,7 +18,6 @@ export const PageNames = {
 export const ButtonColors = {
   PRIMARY: '#4CCF50',    // Green - Main action (like Upload)
   SECONDARY: '#f5f5f5',  // Light gray - Cancel/secondary actions
-  INGEST: '#7952b3',     // Purple - GCS Ingest action
   WARNING: '#ffc107',    // Amber - Confirm/warning actions
   DANGER: '#dc3545',      // Red - Destructive actions
   DISABLED: '#cccccc',   // Gray for disabled state background

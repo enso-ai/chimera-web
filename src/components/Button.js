@@ -112,12 +112,6 @@ export const Button = ({
             baseBorderColor = '#ddd'; // Visible border for secondary
             baseHoverBorderColor = '#ccc';
             break;
-        case 'ingest':
-            baseBgColor = ButtonColors.INGEST;
-            baseHoverBgColor = shadeColor(ButtonColors.INGEST, -10);
-            // Text color defaults to white (handled by getTextColor if needed)
-            // Border color defaults to transparent
-            break;
         case 'warning':
             baseBgColor = ButtonColors.WARNING;
             baseHoverBgColor = shadeColor(ButtonColors.WARNING, -10);
