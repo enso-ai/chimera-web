@@ -8,6 +8,8 @@ import ChannelQueueList from 'components/Queue/ChannelQueueList';
 import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
 import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
 import PlayerModal from 'components/Queue/PlayerModal';
+import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
+import { Button } from 'components/Button';
 
 const Container = styled.div`
     display: grid;
@@ -47,23 +49,7 @@ const UploadButtonRow = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
-`;
-
-const ActionButton = styled.div`
-    width: 200px;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 6px;
-    background-color: ${(props) => (props.disabled ? '#ccc' : 'orange')};
-    color: black;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-`;
-
-const ButtonText = styled.h3`
-    color: #5f5f5f;
+    gap: 20px; // Add gap between buttons
 `;
 
 const ChannelListContainer = styled.div`
@@ -106,11 +92,12 @@ const AssetsView = () => {
     const [highlightedChannel, setHighlightedChannel] = useState(null);
     const [highlightedChannelSettings, setHighlightedChannelSettings] = useState(null);
     const [showPostMenu, setShowPostMenu] = useState(false);
+    const [showGCSIngestDialog, setShowGCSIngestDialog] = useState(false); // State for the new dialog
     const [showPostSettings, setShowPostSettings] = useState(false);
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
     const [playingAsset, setPlayingAsset] = useState(null);
 
-    const { assets, isLoading, error } = useQueue(highlightedChannel?.id);
+    const { assets, isLoading, error, refreshQueue } = useQueue(highlightedChannel?.id);
 
     useEffect(() => {
         if (channels && channels.length > 0) {
@@ -149,6 +136,14 @@ const AssetsView = () => {
     const handleAddAssetSuccess = useCallback(() => {
         // No action needed here anymore, PostMenu will trigger refresh via useQueue.
         console.log('Asset upload process completed in PostMenu.');
+    }, []);
+
+    // Handler for successful GCS ingestion start
+    const handleGCSIngestSuccess = useCallback((channel_id) => {
+        console.log('GCS ingestion job started successfully.');
+        // Queue refresh is handled within the dialog component
+        refreshQueue();
+        setShowGCSIngestDialog(false);
     }, []);
 
     const handleToggle = useCallback(
@@ -214,12 +209,20 @@ const AssetsView = () => {
                     }}
                 />
                 <UploadButtonRow>
-                    <ActionButton
+                    <Button
                         onClick={() => setShowPostMenu(true)}
                         disabled={!highlightedChannel || !highlightedChannel.id || isLoading}
+                        color='#4CCF50'
                     >
-                        <ButtonText>Upload</ButtonText>
-                    </ActionButton>
+                        Upload Files
+                    </Button>
+                    <Button
+                        onClick={() => setShowGCSIngestDialog(true)}
+                        disabled={!highlightedChannel || !highlightedChannel.id || isLoading}
+                        color='#FF6D00'
+                    >
+                        Ingest GCS
+                    </Button>
                 </UploadButtonRow>
             </AssetContainer>
             <ChannelListContainer>
@@ -243,6 +246,15 @@ const AssetsView = () => {
                     channel={highlightedChannel}
                     onClose={() => setShowPostMenu(false)}
                     onSuccess={handleAddAssetSuccess}
+                />
+            )}
+
+            {/* Render the GCS Ingest Dialog */}
+            {showGCSIngestDialog && (
+                <GCSIngestDialog
+                    channel={highlightedChannel}
+                    onClose={() => setShowGCSIngestDialog(false)}
+                    onSuccess={handleGCSIngestSuccess}
                 />
             )}
 
