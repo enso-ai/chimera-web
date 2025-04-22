@@ -114,7 +114,7 @@ const FileDropZone = ({
             <input
                 id="file-input"
                 type="file"
-                accept="video/mp4,video/quicktime,video/webm"
+                accept=".mp4,.mov,.webm"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
                 multiple
