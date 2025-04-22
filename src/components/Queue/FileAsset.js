@@ -9,6 +9,7 @@ import {
     LOCKED_STATES,
 } from 'constants/assetStatus';
 import ThumbnailButton from './ThumbnailButton';
+import { ButtonColors } from 'constants';
 
 const Row = styled.div`
     display: grid;
@@ -142,14 +143,8 @@ const IconButton = styled.button`
     height: 32px;
     border: none;
     border-radius: 4px;
-    background: ${(props) =>
-        props.variant === 'danger'
-            ? '#FF4444'
-            : props.variant === 'primary'
-            ? '#4CCF50'
-            : '#f0f0f0'};
-    color: ${(props) =>
-        props.variant === 'danger' || props.variant === 'primary' ? 'white' : '#666'};
+    background: ${(props) => props.color || 'gray'};
+    color: white;
     cursor: pointer;
     transition: opacity 0.2s;
     &:hover {
@@ -161,6 +156,12 @@ const IconButton = styled.button`
     }
 `;
 
+    // background: ${(props) =>
+    //     props.variant === 'danger'
+    //         ? ButtonColors.DANGER
+    //         : props.variant === 'primary'
+    //         ? ButtonColors.PRIMARY
+    //         : ButtonColors.REFRESH};
 const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
     const {
         updateTitle,
@@ -228,6 +229,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                     {isEditing ? (
                         <>
                             <IconButton
+                                color={ButtonColors.POSITIVE}
                                 onClick={handleEditSave}
                                 disabled={isActionInProgress(updateActionKey)}
                             >
@@ -238,6 +240,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                                 )}
                             </IconButton>
                             <IconButton
+                                color={ButtonColors.NEGATIVE}
                                 onClick={handleEditCancel}
                                 disabled={isActionInProgress(updateActionKey)}
                             >
@@ -278,6 +281,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
             </InfoSection>
             <ActionButtons>
                 <IconButton
+                    color={ButtonColors.REFRESH}
                     onClick={() => reprocessAsset(asset.id)}
                     disabled={
                         !PROCESSABLE_STATES.includes(asset.status) ||
@@ -288,7 +292,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                     {isActionInProgress(reprocessActionKey) ? '...' : <FiRefreshCw size={18} />}
                 </IconButton>
                 <IconButton
-                    variant='primary'
+                    color={ButtonColors.PRIMARY}
                     onClick={() => postNow(asset.id)}
                     disabled={
                         asset.status !== ASSET_STATUS.PROCESSED || isActionInProgress(postActionKey)
@@ -298,7 +302,7 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                     {isActionInProgress(postActionKey) ? '...' : <FiSend size={18} />}
                 </IconButton>
                 <IconButton
-                    variant='danger'
+                    color={ButtonColors.DANGER}
                     onClick={() => deleteAsset(asset.id)}
                     disabled={
                         LOCKED_STATES.includes(asset.status) || isActionInProgress(deleteActionKey)

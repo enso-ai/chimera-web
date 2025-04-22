@@ -3,13 +3,14 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useChannel } from 'hocs/channel';
 import { useQueue } from 'hocs/queue';
 import { getChannelSchedule, updateChannelSchedule } from 'services/backend';
-import PostMenu from 'components/Queue/PostMenu';
+import UploadDialog from 'components/Queue/UploadDialog';
 import ChannelQueueList from 'components/Queue/ChannelQueueList';
 import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
 import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
 import PlayerModal from 'components/Queue/PlayerModal';
 import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
 import { Button } from 'components/Button';
+import { ButtonColors } from 'constants';
 
 const Container = styled.div`
     display: grid;
@@ -91,7 +92,7 @@ const AssetsView = () => {
     const { channels } = useChannel();
     const [highlightedChannel, setHighlightedChannel] = useState(null);
     const [highlightedChannelSettings, setHighlightedChannelSettings] = useState(null);
-    const [showPostMenu, setShowPostMenu] = useState(false);
+    const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [showGCSIngestDialog, setShowGCSIngestDialog] = useState(false); // State for the new dialog
     const [showPostSettings, setShowPostSettings] = useState(false);
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
@@ -210,16 +211,16 @@ const AssetsView = () => {
                 />
                 <UploadButtonRow>
                     <Button
-                        onClick={() => setShowPostMenu(true)}
+                        onClick={() => setShowUploadDialog(true)}
                         disabled={!highlightedChannel || !highlightedChannel.id || isLoading}
-                        color='#4CCF50'
+                        color={ButtonColors.SECONDARY}
                     >
                         Upload Files
                     </Button>
                     <Button
                         onClick={() => setShowGCSIngestDialog(true)}
                         disabled={!highlightedChannel || !highlightedChannel.id || isLoading}
-                        color='#FF6D00'
+                        color={ButtonColors.PRIMARY}
                     >
                         Ingest GCS
                     </Button>
@@ -241,10 +242,10 @@ const AssetsView = () => {
                 ))}
             </ChannelListContainer>
 
-            {showPostMenu && (
-                <PostMenu
+            {showUploadDialog && (
+                <UploadDialog
                     channel={highlightedChannel}
-                    onClose={() => setShowPostMenu(false)}
+                    onClose={() => setShowUploadDialog(false)}
                     onSuccess={handleAddAssetSuccess}
                 />
             )}

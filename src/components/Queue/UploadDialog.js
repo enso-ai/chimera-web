@@ -77,7 +77,7 @@ const generateFileKey = (file) => {
     return JSON.stringify(identifier);
 };
 
-const PostMenu = ({ channel, onClose, onSuccess }) => {
+const UploadDialog = ({ channel, onClose, onSuccess }) => {
     const [files, setFiles] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
     const [jobDone, setJobDone] = useState(false);
@@ -318,4 +318,4 @@ const PostMenu = ({ channel, onClose, onSuccess }) => {
     );
 };
 
-export default PostMenu;
+export default UploadDialog;

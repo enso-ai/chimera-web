@@ -4,6 +4,7 @@ import { FiX, FiInfo } from 'react-icons/fi'; // Added FiInfo
 
 import { ingestFromGCS } from 'services/backend';
 import { Button } from '../Button'; // Import the refactored Button
+import { Theme } from 'constants'; // Import theme constants
 
 // Reusing styled components from PostMenu or similar structure
 const Overlay = styled.div`
@@ -73,8 +74,8 @@ const PrimaryInstruction = styled.p`
 `;
 
 const InfoBox = styled.div`
-    border: 1px solid #4CCF50;
-    background-color: #e8fadf;
+    border: 1px solid ${(props) => Theme.PRIMARY};
+    background-color: ${(props) => Theme.PRIMARY_LIGHT};
     border-radius: 5px;
     padding: 15px;
 `;

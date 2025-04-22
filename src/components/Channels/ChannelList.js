@@ -1,3 +1,4 @@
+import { Button } from 'components/Button';
 import styled from 'styled-components';
 
 import { redirectToTiktokSignin } from 'utils/tiktok';
@@ -57,24 +58,12 @@ const ChannelLabel = styled.p`
     user-select: none; /* Standard */
 `;
 
-const AddChannelButton = styled.button`
-    width: 80%;
-    height: 50px;
-
+const ButtonContainer = styled.div`
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-
-    border-radius: 6px;
-    background-color: orange;
-    color: black;
-    cursor: pointer;
-
-    margin-bottom: 20px;
-`;
-
-const AccountButtonText = styled.h3`
-    color: #5f5f5f;
+    padding-bottom: 20px;
 `;
 
 export default function ChannelList({ channels, onSelectChannel, highlightedChannel }) {
@@ -94,9 +83,11 @@ export default function ChannelList({ channels, onSelectChannel, highlightedChan
                     </ChannelContainer>
                 ))}
             </AccountsContainer>
-            <AddChannelButton onClick={redirectToTiktokSignin}>
-                <AccountButtonText>Add Channel</AccountButtonText>
-            </AddChannelButton>
+            <ButtonContainer>
+            <Button onClick={redirectToTiktokSignin} fontSize="1.4em">
+                Add Channel
+            </Button>
+            </ButtonContainer>
         </Container>
     );
 };

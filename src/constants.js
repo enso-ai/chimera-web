@@ -14,12 +14,21 @@ export const PageNames = {
     PRIVACY_POLICY: 'privacy-policy',
 };
 
+export const Theme = {
+    PRIMARY: '#1565C0', // Dark Blue
+    PRIMARY_LIGHT: '#E8EAF6', // Light Blue
+    SECONDARY: '#00695C', // Dark Teal
+    SECONDARY_LIGHT: '#B2DFDB', // Light Teal
+};
+
 // Button Color Palette
 export const ButtonColors = {
-  PRIMARY: '#4CCF50',    // Green - Main action (like Upload)
-  SECONDARY: '#f5f5f5',  // Light gray - Cancel/secondary actions
+  PRIMARY: Theme.PRIMARY,    // Dark Blue - Main action
+  SECONDARY: Theme.SECONDARY,  // Light gray - Cancel/secondary actions
+  REFRESH: '#4CAF50', // Green - Refresh actions
   WARNING: '#ffc107',    // Amber - Confirm/warning actions
   DANGER: '#dc3545',      // Red - Destructive actions
   DISABLED: '#cccccc',   // Gray for disabled state background
-  DISABLED_TEXT: '#666666' // Gray for disabled state text
+  POSITIVE: '#4CAF50', // Green - Positive actions
+  NEGATIVE: '#dc3545', // Red - Negative actions
 };

@@ -6,7 +6,6 @@ const getTextColor = (bgColor) => {
     // Simple check for light backgrounds (adjust threshold as needed)
     // For more robust solution, consider a library like 'color'
     if (
-        bgColor === ButtonColors.SECONDARY ||
         bgColor === ButtonColors.WARNING ||
         bgColor === ButtonColors.DISABLED
     ) {
@@ -56,7 +55,7 @@ const shadeColor = (color, percent) => {
 const StyledButton = styled.button`
     padding: 10px 20px;
     border-radius: 6px;
-    font-size: 1em;
+    font-size: ${props=> props.fontSize || '1em'};
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
@@ -98,7 +97,7 @@ export const Button = ({
 
     // 1. Set default values (based on 'primary' variant initially)
     let baseBgColor = ButtonColors.PRIMARY;
-    let baseHoverBgColor = shadeColor(ButtonColors.PRIMARY, -10);
+    let baseHoverBgColor = shadeColor(ButtonColors.PRIMARY, +25);
     let baseTextColor = 'white';
     let baseBorderColor = 'transparent'; // Primary has no visible border
     let baseHoverBorderColor = 'transparent';
@@ -124,6 +123,18 @@ export const Button = ({
             // Text color defaults to white
             // Border color defaults to transparent
             break;
+        case 'positive':
+            baseBgColor = ButtonColors.POSITIVE;
+            baseHoverBgColor = shadeColor(ButtonColors.POSITIVE, -10);
+            // Text color defaults to white
+            // Border color defaults to transparent
+            break;
+        case 'negative':
+            baseBgColor = ButtonColors.NEGATIVE;
+            baseHoverBgColor = shadeColor(ButtonColors.NEGATIVE, -10);
+            // Text color defaults to white
+            // Border color defaults to transparent
+            break;
         // Add more variants if needed
     }
 
@@ -137,7 +148,7 @@ export const Button = ({
 
     if (color) {
         finalBgColor = color;
-        finalHoverBgColor = shadeColor(color, -10);
+        finalHoverBgColor = shadeColor(color, +25);
         // Reset others to primary defaults when background color is overridden
         finalTextColor = getTextColor(color); // Determine text color based on the new background
         finalBorderColor = 'transparent'; // Reset border to primary default
@@ -176,6 +187,6 @@ export const Button = ({
 };
 
 // convenience exports using the new functional component structure
-export const ConfirmButton = (props) => <Button variant='warning' {...props} />;
+export const ConfirmButton = (props) => <Button variant='positive' {...props} />;
 
-export const CancelButton = (props) => <Button variant='secondary' {...props} />;
+export const CancelButton = (props) => <Button variant='negative' {...props} />;
