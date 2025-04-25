@@ -224,9 +224,7 @@ const UploadDialog = ({ channel, onClose, onSuccess }) => {
 
         if (!nextFile) {
             // Check if all files are processed (complete or error)
-            const allProcessed = files.every(
-                (f) => f.status === 'complete' || f.status === 'error'
-            );
+            const allProcessed = files.every((f) => f.status === 'pending' || f.status === 'error');
             if (allProcessed && files.length > 0) {
                 // All uploads finished, trigger refresh for the channel
                 if (channel?.id) {
