@@ -107,7 +107,7 @@ const ChannelContainer = styled.div`
     padding-left: 15px;
     align-items: center;
     cursor: pointer;
-    background-color: ${(props) => (props.selected ? '#a0a0a0' : 'transparent')};
+    background-color: ${(props) => (props.selected ? '#e0e0e0' : 'transparent')};
 `;
 
 const ChannelLabel = styled.p`
