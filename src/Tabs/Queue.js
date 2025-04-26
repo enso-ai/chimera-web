@@ -153,7 +153,7 @@ const AssetsView = () => {
         }
     };
 
-    const notPostedCount = useMemo(() => assets.filter((a) => !a.is_posted).length, [assets]);
+    const notPostedCount = useMemo(() => assets.filter((a) => !a.status == "posted").length, [assets]);
 
     return (
         <Container>
