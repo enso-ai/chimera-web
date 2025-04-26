@@ -177,6 +177,7 @@ export default function ChannelDataView({ channel }) {
                 <EmptyStateMsg>Channel Data is empty, please add your channel!</EmptyStateMsg>
             </EmptyStateContainer>
         );
+    console.log("statsData last slice:", statsData[statsData.length - 1]);
 
     return (
         <Container>
@@ -191,14 +192,15 @@ export default function ChannelDataView({ channel }) {
                 {statsKeys.map((key) => (
                     <StatsCardContainer key={key}>
                         <StatsCardTitle>{key.split('_')[0]}</StatsCardTitle>
-                        <StatsCardCount>{formatNumber(statsData[0]?.[key])}</StatsCardCount>
+                        <StatsCardCount>{formatNumber(statsData[statsData.length-1]?.[key])}</StatsCardCount>
                     </StatsCardContainer>
                 ))}
             </StatsRow>
             <StatsChartContainer>
                 <ChartComponent
                     data={statsData.map((item) => ({
-                        views: item.view_count,
+                        views: item.view_count || 0,
+                        followers: item.follower_count || 0,
                         date: item.date,
                     }))}
                 />
