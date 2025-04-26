@@ -29,9 +29,42 @@ const Header = styled.div`
     align-items: center;
 `;
 
+const StatsContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
+
 const Summary = styled.div`
     font-size: 16px;
     color: #5f5f5f;
+`;
+
+const RefreshButton = styled.button`
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #5f5f5f;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+
+    &:hover {
+        background-color: #e0e0e0;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    svg {
+        width: 18px;
+        height: 18px;
+    }
 `;
 
 const AssetContainer = styled.div`
@@ -101,6 +134,12 @@ const AssetsView = () => {
         setHighlightedChannel(channel);
     };
 
+    const handleRefreshQueue = useCallback(() => {
+        if (highlightedChannel?.id) {
+            refreshQueue();
+        }
+    }, [highlightedChannel?.id, refreshQueue]);
+
     // handleAddAsset is called by PostMenu on success.
     // PostMenu will now call refreshQueue directly via the hook.
     // We still need a function to pass to PostMenu's onSuccess prop,
@@ -159,10 +198,21 @@ const AssetsView = () => {
         <Container>
             <AssetContainer>
                 <Header>
-                    <Summary>
-                        Total Assets: {assets.length} | Not Posted: {notPostedCount}
-                        {isLoading && assets.length > 0 && ' (Loading more...)'}
-                    </Summary>
+                    <StatsContainer>
+                        <Summary>
+                            Total Assets: {assets.length} | Not Posted: {notPostedCount}
+                            {isLoading && assets.length > 0 && ' (Loading more...)'}
+                        </Summary>
+                        <RefreshButton 
+                            onClick={handleRefreshQueue} 
+                            disabled={isLoading || !highlightedChannel}
+                            title="Refresh Queue"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                            </svg>
+                        </RefreshButton>
+                    </StatsContainer>
                     <PostSettingDisplay
                         settings={highlightedChannelSettings}
                         onToggle={handleToggle}
