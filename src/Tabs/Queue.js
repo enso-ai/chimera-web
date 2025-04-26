@@ -11,6 +11,7 @@ import PlayerModal from 'components/Queue/PlayerModal';
 import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
+import ChannelList from 'components/ChannelList';
 
 const Container = styled.div`
     display: grid;
@@ -58,35 +59,6 @@ const ChannelListContainer = styled.div`
     border-left: 3px solid #9a9a9a;
 `;
 
-const ChannelContainer = styled.div`
-    width: calc(100% -15px);
-    height: 40px;
-    display: flex;
-    padding-left: 15px;
-    align-items: center;
-    cursor: pointer;
-    background-color: ${(props) => (props.selected ? '#a0a0a0' : 'transparent')};
-`;
-
-const ChannelTitleContainer = styled.div`
-    width: 100%;
-    border-bottom: 2px solid #9a9a9a;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 5px;
-`;
-
-const ChannelTitleText = styled.h3`
-    color: #5f5f5f;
-`;
-
-const ChannelLabel = styled.p`
-    font-size: 16px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-`;
 
 const AssetsView = () => {
     const { channels } = useChannel();
@@ -227,19 +199,12 @@ const AssetsView = () => {
                 </UploadButtonRow>
             </AssetContainer>
             <ChannelListContainer>
-                <ChannelTitleContainer>
-                    <ChannelTitleText>Channels</ChannelTitleText>
-                </ChannelTitleContainer>
-
-                {channels.map((channel, index) => (
-                    <ChannelContainer
-                        key={index}
-                        onClick={() => handleSelectChannel(channel)}
-                        selected={highlightedChannel?.id === channel.id}
-                    >
-                        <ChannelLabel>{channel.display_name}</ChannelLabel>
-                    </ChannelContainer>
-                ))}
+                <ChannelList
+                    channels={channels}
+                    onSelectChannel={handleSelectChannel}
+                    highlightedChannel={highlightedChannel}
+                    showAddButton={false}
+                />
             </ChannelListContainer>
 
             {showUploadDialog && (

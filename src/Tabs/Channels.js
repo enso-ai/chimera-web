@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { useChannel } from 'hocs/channel'; // Add channel hook
 
 import Loader from 'components/Loader'; // Add Loader
-import ChannelList from 'components/Channels/ChannelList';
+import ChannelList from 'components/ChannelList';
 import ChannelData from 'components/Channels/ChannelData';
 
 const Container = styled.div`

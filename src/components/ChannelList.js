@@ -66,7 +66,13 @@ const ButtonContainer = styled.div`
     padding-bottom: 20px;
 `;
 
-export default function ChannelList({ channels, onSelectChannel, highlightedChannel }) {
+export default function ChannelList({
+    channels,
+    onSelectChannel,
+    highlightedChannel,
+    showAddButton = true,
+    addButtonAction = redirectToTiktokSignin
+}) {
     return (
         <Container>
             <AccountTitleContainer>
@@ -83,11 +89,13 @@ export default function ChannelList({ channels, onSelectChannel, highlightedChan
                     </ChannelContainer>
                 ))}
             </AccountsContainer>
-            <ButtonContainer>
-            <Button onClick={redirectToTiktokSignin} fontSize="1.4em">
-                Add Channel
-            </Button>
-            </ButtonContainer>
+            {showAddButton && (
+                <ButtonContainer>
+                    <Button onClick={addButtonAction} fontSize="1.4em">
+                        Add Channel
+                    </Button>
+                </ButtonContainer>
+            )}
         </Container>
     );
-};
+}
