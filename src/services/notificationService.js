@@ -2,7 +2,7 @@
 import { BASE_URL } from "constants";
 
 export const NOTIFICATION_TYPES = {
-    ASSET_STATUS_CHANGE: "assetStatusChange",
+    ASSET_CHANGE: "assetUpdate",
     CHANNEL_UPDATE: "channelUpdate",
 };
 
