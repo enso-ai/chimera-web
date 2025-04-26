@@ -1,18 +1,19 @@
-import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router';
-import { AuthProvider } from 'hocs/auth';
-import { ChannelProvider } from 'hocs/channel';
-import { QueueProvider } from 'hocs/queue';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router";
+import { AuthProvider } from "hocs/auth";
+import { NotificationProvider } from "hocs/notification";
+import { ChannelProvider } from "hocs/channel";
+import { QueueProvider } from "hocs/queue";
 
-import styled from 'styled-components';
-import Header from 'components/Header';
+import styled from "styled-components";
+import Header from "components/Header";
 
-import { tabList } from 'Tabs';
-import TiktokCallback from 'pages/TiktokCallback';
-import TermsOfService from 'pages/TermsOfService';
-import PrivacyPolicy from 'pages/PrivacyPolicy';
-import Signin from 'pages/SignIn';
-import Footer from 'components/Footer';
-import { PageNames } from 'constants';
+import { tabList } from "Tabs";
+import TiktokCallback from "pages/TiktokCallback";
+import TermsOfService from "pages/TermsOfService";
+import PrivacyPolicy from "pages/PrivacyPolicy";
+import Signin from "pages/SignIn";
+import Footer from "components/Footer";
+import { PageNames } from "constants";
 
 const LayoutContainer = styled.div`
     width: 100vw;
@@ -46,18 +47,19 @@ const MainContainer = styled.div`
 const Layout = () => {
     return (
         <AuthProvider>
-            <ChannelProvider>
-                <QueueProvider>
-                    <LayoutContainer>
-                        {/* Header is always present */}
-                        <Header />
-                        <MainContainer>
-                            <Outlet />
-                        </MainContainer>
-                        <Footer />
-                    </LayoutContainer>
-                </QueueProvider>
-            </ChannelProvider>
+            <NotificationProvider>
+                <ChannelProvider>
+                    <QueueProvider>
+                        <LayoutContainer>
+                            <Header />
+                            <MainContainer>
+                                <Outlet />
+                            </MainContainer>
+                            <Footer />
+                        </LayoutContainer>
+                    </QueueProvider>
+                </ChannelProvider>
+            </NotificationProvider>
         </AuthProvider>
     );
 };
@@ -66,16 +68,25 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path='/' element={<Navigate to='/app/dashboard' replace />} />
+                <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
                 <Route path={PageNames.APP} element={<Layout />}>
                     {tabList.map((tab) => (
                         <Route key={tab.href} path={tab.href} element={<tab.comp />} />
                     ))}
                 </Route>
                 <Route path={`/${PageNames.SIGNIN}`} element={<Signin />} />
-                <Route path={`/${PageNames.LOGIN_CALLBACK}`} element={<TiktokCallback />} />
-                <Route path={`/${PageNames.TERMS_OF_SERVICE}`} element={<TermsOfService />} />
-                <Route path={`/${PageNames.PRIVACY_POLICY}`} element={<PrivacyPolicy />} />
+                <Route
+                    path={`/${PageNames.LOGIN_CALLBACK}`}
+                    element={<TiktokCallback />}
+                />
+                <Route
+                    path={`/${PageNames.TERMS_OF_SERVICE}`}
+                    element={<TermsOfService />}
+                />
+                <Route
+                    path={`/${PageNames.PRIVACY_POLICY}`}
+                    element={<PrivacyPolicy />}
+                />
             </Routes>
         </BrowserRouter>
     );

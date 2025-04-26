@@ -12,9 +12,7 @@ import {
     updateAsset,
     deleteAssets,
     processAsset,
-    getPostStatus,
-    getAssetStatus,
-    getAssetDetails, // Import the new function
+    getAssetDetails,
 } from 'services/backend';
 import {
     ASSET_STATUS,
@@ -22,15 +20,13 @@ import {
     POSTING_TERMINAL_STATES,
     LOCKED_STATES
 } from 'constants/assetStatus';
+import { useNotification } from './notification';
 
 const QueueContext = createContext();
 
 const initialState = {
     queues: {}, // { [channelId]: { assets: [], isLoading: false, isFullyLoaded: false, error: null, page: 1 } }
     actionsInProgress: new Set(), // Track ongoing API calls for specific assets (e.g., 'delete-assetId')
-    pollingPostStatus: new Map(), // Track active post status polling { assetId: { intervalId: number, attempts: number } }
-    pollingDeleteStatus: new Map(), // Track active delete status polling { assetId: { intervalId: number, attempts: number, channelId: string } }
-    pollingProcessStatus: new Map(), // Track active processing status polling { assetId: { intervalId: number, attempts: number } }
 };
 
 const actionTypes = {
@@ -193,20 +189,11 @@ function queueReducer(state, action) {
 }
 
 const PAGE_SIZE = 20; // Or adjust as needed
-const POLLING_INTERVAL = {
-    POST: 3000, // 3 seconds
-    DELETE: 3000, // 3 seconds
-    PROCESS: 3000, // 3 seconds
-};
-const MAX_POLLING_ATTEMPTS = {
-    POST: 20, // 60 seconds total (20 * 3s)
-    DELETE: 10, // 30 seconds total (10 * 3s)
-    PROCESS: 20, // 60 seconds total (20 * 3s)
-};
 
 export const QueueProvider = ({ children }) => {
     const [state, dispatch] = useReducer(queueReducer, initialState);
     const activeFetches = useRef(new Set()); // Track active full fetches per channel
+    const { assetUpdateQueueRef, assetUpdatedTs } = useNotification();
 
     const fetchAllAssetsForChannel = useCallback(async (channelId, isRefresh = false) => {
         if (!channelId || activeFetches.current.has(channelId)) {
@@ -289,6 +276,67 @@ export const QueueProvider = ({ children }) => {
         [state.actionsInProgress]
     );
 
+    // --- Handle Asset Notifications ---
+    useEffect(() => {
+        // Process any notifications in the queue
+        if (assetUpdateQueueRef.current.length > 0 && assetUpdatedTs > 0) {
+            // Make a copy of the queue so we don't lose notifications that might come in while processing
+            console.log(
+                "received asset update notification, total:",
+                assetUpdateQueueRef.current.length
+            );
+            const notificationsToProcess = [...assetUpdateQueueRef.current];
+            
+            // Clear the queue before processing to avoid race conditions
+            assetUpdateQueueRef.current = [];
+            
+            // Process each notification
+            notificationsToProcess.forEach(async (notification) => {
+                console.log("Processing notification:", notification);
+                const { channelId, assetId, status, deleted } = notification;
+                
+                // Handle deletion
+                if (deleted) {
+                    console.log(`Asset ${assetId} deleted`);
+                    dispatch({
+                        type: actionTypes.REMOVE_ASSET,
+                        payload: { channelId, assetId },
+                    });
+                    return;
+                }
+                
+                // For status updates that are terminal states, fetch the complete asset details
+                if (PROCESSING_TERMINAL_STATES.includes(status) || POSTING_TERMINAL_STATES.includes(status)) {
+                    try {
+                        console.log(
+                            `Asset ${assetId} is in terminal state: ${status}, fetching new details...`
+                        );
+                        const assetDetails = await getAssetDetails(assetId);
+                        console.log("Fetched asset details, updating state:", assetDetails);
+                        dispatch({
+                            type: actionTypes.SET_ASSET,
+                            payload: { channelId, asset: assetDetails },
+                        });
+                    } catch (error) {
+                        // If fetching details fails (e.g., 404), just update the status
+                        console.error(`Failed to fetch details for asset ${assetId}:`, error);
+                        dispatch({
+                            type: actionTypes.SET_ASSET,
+                            payload: { channelId, asset: { id: assetId, status } },
+                        });
+                    }
+                } else {
+                    // For non-terminal states, just update the status
+                    console.log(`Asset ${assetId} status updated to: ${status}`);
+                    dispatch({
+                        type: actionTypes.SET_ASSET,
+                        payload: { channelId, asset: { id: assetId, status } },
+                    });
+                }
+            });
+        }
+    }, [assetUpdatedTs, dispatch]);
+
     // --- Action Handlers ---
 
     const handleUpdateTitle = useCallback(
@@ -322,165 +370,6 @@ export const QueueProvider = ({ children }) => {
         [state.queues, isActionInProgress]
     );
 
-    const startPollingPostStatus = useCallback(
-        (channelId, assetId) => {
-            // Clear any existing polling for this asset
-            if (state.pollingPostStatus.has(assetId)) {
-                clearInterval(state.pollingPostStatus.get(assetId).intervalId);
-            }
-
-            const intervalId = setInterval(async () => {
-                const pollState = state.pollingPostStatus.get(assetId);
-                if (!pollState) return; // Polling was stopped
-
-                const newAttempts = pollState.attempts + 1;
-                if (newAttempts > MAX_POLLING_ATTEMPTS.POST) {
-                    // Stop polling after max attempts
-                    clearInterval(intervalId);
-                    state.pollingPostStatus.delete(assetId);
-                    console.warn(`Polling timed out for asset ${assetId}`);
-                    return;
-                }
-
-                try {
-                    const response = await getPostStatus(assetId);
-                    const status = response.status;
-
-                    // Update polling attempts
-                    state.pollingPostStatus.set(assetId, {
-                        intervalId,
-                        attempts: newAttempts,
-                    });
-
-                    if (POSTING_TERMINAL_STATES.includes(status)) {
-                        // Terminal state reached
-                        clearInterval(intervalId);
-                        state.pollingPostStatus.delete(assetId);
-
-                        // Update asset status and include failed_reason if status is posting_failed
-                        const assetUpdate = { id: assetId, status };
-                        if (status === ASSET_STATUS.POSTING_FAILED && response.failed_reason) {
-                            assetUpdate.failed_reason = response.failed_reason;
-                        }
-
-                        dispatch({
-                            type: actionTypes.SET_ASSET,
-                            payload: { channelId, asset: assetUpdate },
-                        });
-                    }
-                } catch (error) {
-                    console.error('Failed to poll post status:', error);
-                    // Continue polling until max attempts reached
-                    state.pollingPostStatus.set(assetId, {
-                        intervalId,
-                        attempts: newAttempts,
-                    });
-                }
-            }, POLLING_INTERVAL.POST);
-
-            // Initialize polling state
-            state.pollingPostStatus.set(assetId, {
-                intervalId,
-                attempts: 0,
-            });
-        },
-        [state.pollingPostStatus, dispatch]
-    );
-
-    const stopPollingPostStatus = useCallback(
-        (assetId) => {
-            const pollState = state.pollingPostStatus.get(assetId);
-            if (pollState) {
-                clearInterval(pollState.intervalId);
-                state.pollingPostStatus.delete(assetId);
-            }
-        },
-        [state.pollingPostStatus]
-    );
-
-    // --- Start Polling for Processing Status ---
-    const startPollingProcessStatus = useCallback(
-        (channelId, assetId) => {
-            // Clear any existing polling for this asset
-            if (state.pollingProcessStatus.has(assetId)) {
-                clearInterval(state.pollingProcessStatus.get(assetId).intervalId);
-            }
-
-            const intervalId = setInterval(async () => {
-                const pollState = state.pollingProcessStatus.get(assetId);
-                if (!pollState) return; // Polling was stopped
-
-                const newAttempts = pollState.attempts + 1;
-                if (newAttempts > MAX_POLLING_ATTEMPTS.PROCESS) {
-                    clearInterval(intervalId);
-                    state.pollingProcessStatus.delete(assetId);
-                    console.warn(`Process polling timed out for asset ${assetId}`);
-                    dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'process_timeout' } } });
-                    return;
-                }
-
-                try {
-                    const response = await getAssetStatus(assetId);
-                    const status = response.status;
-
-                    // Update polling attempts
-                    state.pollingProcessStatus.set(assetId, {
-                        intervalId,
-                        attempts: newAttempts,
-                    });
-
-                    // Check if processing is done (either success or failure)
-                    if ( PROCESSING_TERMINAL_STATES.includes(status) ) {
-                        clearInterval(intervalId);
-                        state.pollingProcessStatus.delete(assetId);
-
-                        const newAsset = await getAssetDetails(assetId);
-                        // Update asset in the queue
-                        dispatch({
-                            type: actionTypes.SET_ASSET,
-                            payload: { channelId, asset: newAsset },
-                        });
-                    }
-                    // If status is still 'pending' or 'processing', continue polling
-                } catch (error) {
-                    console.error('Failed to poll processing status:', error);
-                    // If we get a 404, the file may have been removed due to processing failure or other reasons
-                    if (error.code === 404) {
-                        clearInterval(intervalId);
-                        state.pollingProcessStatus.delete(assetId);
-                        // Optionally remove the asset from the queue if it's gone
-                        // dispatch({ type: actionTypes.REMOVE_ASSET, payload: { channelId, assetId } });
-                    } else {
-                        // Other error, continue polling
-                        state.pollingProcessStatus.set(assetId, {
-                            intervalId,
-                            attempts: newAttempts,
-                        });
-                    }
-                }
-            }, POLLING_INTERVAL.PROCESS);
-
-            // Initialize polling state
-            state.pollingProcessStatus.set(assetId, {
-                intervalId,
-                attempts: 0,
-            });
-        },
-        [state.pollingProcessStatus, dispatch]
-    );
-
-    const stopPollingProcessStatus = useCallback(
-        (assetId) => {
-            const pollState = state.pollingProcessStatus.get(assetId);
-            if (pollState) {
-                clearInterval(pollState.intervalId);
-                state.pollingProcessStatus.delete(assetId);
-            }
-        },
-        [state.pollingProcessStatus]
-    );
-    // --- End Polling for Processing Status ---
-
     const handlePostNow = useCallback(
         async (channelId, assetId) => {
             const actionKey = `post-${assetId}`;
@@ -494,7 +383,7 @@ export const QueueProvider = ({ children }) => {
 
             try {
                 await postAsset(assetId);
-                // Update status to posting and start polling
+                // Update status to posting - actual status updates will come from WebSocket
                 dispatch({
                     type: actionTypes.SET_ASSET,
                     payload: {
@@ -502,7 +391,6 @@ export const QueueProvider = ({ children }) => {
                         asset: { ...originalAsset, id: assetId, status: ASSET_STATUS.POSTING },
                     },
                 });
-                startPollingPostStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to post asset:', error);
                 alert('Failed to post video. Please try again.');
@@ -510,75 +398,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress, startPollingPostStatus]
-    );
-
-    const startPollingDeleteStatus = useCallback(
-        (channelId, assetId) => {
-            // Clear any existing polling for this asset
-            if (state.pollingDeleteStatus.has(assetId)) {
-                clearInterval(state.pollingDeleteStatus.get(assetId).intervalId);
-            }
-
-            const intervalId = setInterval(async () => {
-                const pollState = state.pollingDeleteStatus.get(assetId);
-                if (!pollState) return; // Polling was stopped
-
-                const newAttempts = pollState.attempts + 1;
-                if (newAttempts > MAX_POLLING_ATTEMPTS.DELETE) {
-                    clearInterval(intervalId);
-                    state.pollingDeleteStatus.delete(assetId);
-                    console.warn(`Delete polling timed out for asset ${assetId}`);
-                    return;
-                }
-
-                try {
-                    await getAssetStatus(assetId); // Use the correct function here
-                    // If we get here, the asset still exists
-                    state.pollingDeleteStatus.set(assetId, {
-                        intervalId,
-                        attempts: newAttempts,
-                        channelId,
-                    });
-                } catch (error) {
-                    if (error.code === 404) {
-                        // Asset has been deleted from the backend
-                        clearInterval(intervalId);
-                        state.pollingDeleteStatus.delete(assetId);
-                        dispatch({
-                            type: actionTypes.REMOVE_ASSET,
-                            payload: { channelId, assetId },
-                        });
-                    } else {
-                        // Other error, continue polling
-                        state.pollingDeleteStatus.set(assetId, {
-                            intervalId,
-                            attempts: newAttempts,
-                            channelId,
-                        });
-                    }
-                }
-            }, POLLING_INTERVAL.DELETE);
-
-            // Initialize polling state
-            state.pollingDeleteStatus.set(assetId, {
-                intervalId,
-                attempts: 0,
-                channelId,
-            });
-        },
-        [state.pollingDeleteStatus, dispatch]
-    );
-
-    const stopPollingDeleteStatus = useCallback(
-        (assetId) => {
-            const pollState = state.pollingDeleteStatus.get(assetId);
-            if (pollState) {
-                clearInterval(pollState.intervalId);
-                state.pollingDeleteStatus.delete(assetId);
-            }
-        },
-        [state.pollingDeleteStatus]
+        [state.queues, isActionInProgress]
     );
 
     const handleDeleteAsset = useCallback(
@@ -596,15 +416,11 @@ export const QueueProvider = ({ children }) => {
                 return;
             }
 
-            // Stop any active polling
-            stopPollingPostStatus(assetId);
-            stopPollingDeleteStatus(assetId);
-
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
             const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
 
             try {
-                // Update status to deleting
+                // Update status to deleting - actual deletion notification will come from WebSocket
                 dispatch({
                     type: actionTypes.SET_ASSET,
                     payload: {
@@ -614,8 +430,7 @@ export const QueueProvider = ({ children }) => {
                 });
 
                 await deleteAssets([assetId]);
-                // Start polling for deletion confirmation
-                startPollingDeleteStatus(channelId, assetId);
+                // The asset will be removed when we receive a deletion notification
             } catch (error) {
                 console.error('Failed to delete asset:', error);
                 alert('Failed to delete video. Please try again.');
@@ -630,13 +445,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [
-            state.queues,
-            isActionInProgress,
-            stopPollingPostStatus,
-            stopPollingDeleteStatus,
-            startPollingDeleteStatus,
-        ]
+        [state.queues, isActionInProgress]
     );
 
     const handleReprocessAsset = useCallback(
@@ -648,12 +457,12 @@ export const QueueProvider = ({ children }) => {
                 return;
             }
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
-            // Optionally update status optimistically to 'processing' or similar
-            // dispatch({ type: actionTypes.SET_ASSET, payload: { channelId, asset: { id: assetId, status: 'processing' } } });
 
             try {
                 const { status } = await processAsset(assetId);
                 console.log("Reprocess status:", status);
+                
+                // Update initial status - subsequent updates will come from WebSocket
                 dispatch({
                     type: actionTypes.SET_ASSET,
                     payload: {
@@ -661,91 +470,18 @@ export const QueueProvider = ({ children }) => {
                         asset: { id: assetId, status },
                     }
                 });
-
-                startPollingProcessStatus(channelId, assetId);
             } catch (error) {
                 console.error('Failed to reprocess asset:', error);
                 alert('Failed to reprocess video. Please try again.');
-                // Revert optimistic status update if implemented
             } finally {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [refreshQueue, isActionInProgress, startPollingProcessStatus] // Added startPollingProcessStatus dependency
+        [isActionInProgress]
     );
-
-    // Effect to automatically start polling for assets in relevant states
-    useEffect(() => {
-        Object.entries(state.queues).forEach(([channelId, queue]) => {
-            if (queue && queue.assets) {
-                queue.assets.forEach((asset) => {
-                    // Start polling if asset is uploaded or processing and not already being polled for processing
-                    if (
-                        (asset.status === ASSET_STATUS.PENDING || asset.status === ASSET_STATUS.PROCESSING) && // 'processing' might be initial state from PostMenu
-                        !state.pollingProcessStatus.has(asset.id)
-                    ) {
-                        console.log(
-                            `Starting process polling for asset ${asset.id} with status ${asset.status}`
-                        );
-                        startPollingProcessStatus(channelId, asset.id);
-                    }
-
-                    // Start polling if asset is posting and not already being polled for posting
-                    if (
-                        asset.status === ASSET_STATUS.POSTING &&
-                        !state.pollingPostStatus.has(asset.id)
-                    ) {
-                        console.log(`Starting post polling for asset ${asset.id}`);
-                        startPollingPostStatus(channelId, asset.id);
-                    }
-
-                    // Start polling if asset is deleting and not already being polled for deletion
-                    if (
-                        asset.status === ASSET_STATUS.DELETING &&
-                        !state.pollingDeleteStatus.has(asset.id)
-                    ) {
-                        console.log(`Starting delete polling for asset ${asset.id}`);
-                        startPollingDeleteStatus(channelId, asset.id);
-                    }
-                });
-            }
-        });
-        // Dependencies: state.queues to re-run when assets change, and the polling start functions
-    }, [
-        state.queues,
-        startPollingProcessStatus,
-        startPollingPostStatus,
-        startPollingDeleteStatus,
-        state.pollingProcessStatus,
-        state.pollingPostStatus,
-        state.pollingDeleteStatus,
-    ]);
-
-    // Add cleanup effect for polling intervals
-    useEffect(() => {
-        return () => {
-            // Clean up all polling intervals on unmount
-            state.pollingPostStatus.forEach((pollState, assetId) => {
-                clearInterval(pollState.intervalId);
-            });
-            state.pollingPostStatus.clear();
-
-            state.pollingDeleteStatus.forEach((pollState, assetId) => {
-                clearInterval(pollState.intervalId);
-            });
-            state.pollingDeleteStatus.clear();
-
-            state.pollingProcessStatus.forEach((pollState, assetId) => {
-                clearInterval(pollState.intervalId);
-            });
-            state.pollingProcessStatus.clear();
-        };
-    }, [state.pollingPostStatus, state.pollingDeleteStatus, state.pollingProcessStatus]);
 
     const value = {
         getQueueState,
-        startPollingProcessStatus, // Expose the new polling function
-        stopPollingProcessStatus, // Expose the stop function
         fetchAllAssetsForChannel,
         refreshQueue,
         handleUpdateTitle,

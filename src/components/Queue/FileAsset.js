@@ -156,12 +156,6 @@ const IconButton = styled.button`
     }
 `;
 
-    // background: ${(props) =>
-    //     props.variant === 'danger'
-    //         ? ButtonColors.DANGER
-    //         : props.variant === 'primary'
-    //         ? ButtonColors.PRIMARY
-    //         : ButtonColors.REFRESH};
 const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
     const {
         updateTitle,
