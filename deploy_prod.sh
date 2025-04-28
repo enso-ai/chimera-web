@@ -1,3 +1,13 @@
+# Get current timestamp in seconds
+TIMESTAMP=$(date +%s)
+TAG_NAME="prod_${TIMESTAMP}"
+
+echo "Creating git tag: ${TAG_NAME}"
+git tag "${TAG_NAME}"
+
+echo "Pushing git tag: ${TAG_NAME}"
+git push origin "${TAG_NAME}"
+
 echo Building...
 npm run build:prod
 
