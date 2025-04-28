@@ -11,14 +11,14 @@ export const redirectToTiktokSignin = () => {
     localStorage.setItem('csrfState', csrfState);
 
     let url = 'https://www.tiktok.com/v2/auth/authorize/';
-    // Template literals for cleaner string construction
-    url += `?client_key=${CLIENT_KEY}`;
-    url += `&scope=${scope || 'user.info.basic'}`; // Default scope
+    // Template literals for cleaner string construction and encode all components
+    url += `?client_key=${encodeURIComponent(CLIENT_KEY)}`;
+    url += `&scope=${encodeURIComponent(scope || 'user.info.basic')}`; // Default scope, encoded
     url += '&response_type=code';
     // URL-encode the redirect URI!
     const redirectURL = window.location.origin + REDIRECT_PATH;
     url += `&redirect_uri=${encodeURIComponent(redirectURL)}`;
-    url += `&state=${csrfState}`;
+    url += `&state=${encodeURIComponent(csrfState)}`; // Encode state
 
     window.location.href = url;
 };
