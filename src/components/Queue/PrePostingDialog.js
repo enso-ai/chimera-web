@@ -1,9 +1,9 @@
 import { styled } from 'styled-components';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react'; // Added useRef and useEffect
 import Modal from 'components/Modal';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
-import { FiPlay } from 'react-icons/fi';
+import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
 import Switch from './PostSettings/Switch';
 
 // Define colors for the toggle switches
@@ -13,15 +13,15 @@ const TOGGLE_INACTIVE_COLOR = ButtonColors.NEGATIVE;
 // Helper function to format seconds into MM:SS or HH:MM:SS format
 const formatTime = (seconds) => {
   if (!seconds && seconds !== 0) return 'Unknown';
-  
+
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
-  
+
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
@@ -49,18 +49,25 @@ const Content = styled.div`
   border-radius: 12px;
   margin: 0 18px;
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 24px;
+  grid-template-columns: 300px 1fr; // Keep original column definition for top part
+  grid-template-rows: auto auto auto; // Define rows for content, compliance, buttons
+  grid-template-areas:
+    "leftCol rightCol"
+    "compliance compliance"
+    "buttons buttons";
+  gap: 24px; // Keep existing gap
 `;
 
 const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
+  grid-area: leftCol;
 `;
 
 const RightColumn = styled.div`
   display: flex;
   flex-direction: column;
+  grid-area: rightCol;
 `;
 
 const VideoPreview = styled.div`
@@ -184,11 +191,13 @@ const ComplianceText = styled.div`
   color: #666;
   margin: 16px 0;
   line-height: 1.5;
-  
+  grid-area: compliance; /* Added grid-area */
+  text-align: center;
+
   a {
     color: #2196f3;
     text-decoration: none;
-    
+
     &:hover {
       text-decoration: underline;
     }
@@ -200,9 +209,86 @@ const ButtonRow = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 20px;
+  grid-area: buttons; /* Added grid-area */
 `;
 
-const PrePostingDialog = ({ 
+// Custom styled components for Material Design inputs
+const CustomSelectWrapper = styled.div`
+  position: relative;
+  width: 200px; /* Or adjust as needed */
+  font-family: 'Roboto', sans-serif; /* Assuming Material Design font */
+`;
+
+const CustomSelectDisplay = styled.div`
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid #ccc; /* Material-like bottom border */
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: transparent;
+  font-size: 16px;
+
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border-bottom: 2px solid #2196f3; /* Material blue focus */
+  }
+`;
+
+const CustomSelectDropdown = styled.ul`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Material shadow */
+`;
+
+const CustomSelectOption = styled.li`
+  padding: 8px 12px;
+  cursor: pointer;
+  &:hover {
+    background-color: #eee;
+  }
+  &.selected {
+    background-color: #e0e0e0; /* Slightly different for selected */
+  }
+`;
+
+const StyledMaterialInput = styled.input`
+  width: 200px; /* Or adjust */
+  padding: 8px 0; /* Padding for text, no side padding for underline effect */
+  padding-right: 3px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  background-color: transparent;
+  font-family: 'Roboto', sans-serif;
+  text-align: right;
+
+
+  &:focus {
+    outline: none;
+    border-bottom: 2px solid #2196f3; /* Material blue focus */
+  }
+  &::placeholder {
+    color: #aaa;
+  }
+`;
+
+
+const PrePostingDialog = ({
   creatorInfo,
   asset,
   channelId,
@@ -219,20 +305,38 @@ const PrePostingDialog = ({
   const [commentDisabled, setCommentDisabled] = useState(creatorInfo?.comment_disabled || false);
   const [duetDisabled, setDuetDisabled] = useState(creatorInfo?.duet_disabled || false);
   const [stitchDisabled, setStitchDisabled] = useState(creatorInfo?.stitch_disabled || false);
-  
+
   // Additional settings from API documentation
   const [videoCoverTimestampMs, setVideoCoverTimestampMs] = useState(0);
-  
+
   // Brand content settings with hierarchy
   const [brandContentEnabled, setBrandContentEnabled] = useState(false);
   const [yourBrandEnabled, setYourBrandEnabled] = useState(false);
   const [brandedContentEnabled, setBrandedContentEnabled] = useState(false);
   const [isAigc, setIsAigc] = useState(false);
 
+  // State for custom select dropdown
+  const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = useState(false);
+  const privacySelectRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (privacySelectRef.current && !privacySelectRef.current.contains(event.target)) {
+        setIsPrivacyDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [privacySelectRef]);
+
+
   // Determine if video duration exceeds maximum
-  const durationExceeded = asset?.duration && creatorInfo?.max_video_post_duration_sec && 
+  const durationExceeded = asset?.duration && creatorInfo?.max_video_post_duration_sec &&
                           asset.duration > creatorInfo.max_video_post_duration_sec;
-  
+
   // Generate compliance text based on brand settings
   const getComplianceText = () => {
     if (brandContentEnabled) {
@@ -250,21 +354,21 @@ const PrePostingDialog = ({
         );
       }
     }
-    
+
     return (
       <>
         By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
       </>
     );
   };
-  
+
   const handleConfirm = () => {
     // Prevent posting if duration exceeds maximum
     if (durationExceeded) {
       alert('Video duration exceeds the maximum allowed for your TikTok account.');
       return;
     }
-    
+
     // Format data to match the API schema
     onConfirm({
       title: asset.title || 'Untitled', // Required field
@@ -319,16 +423,16 @@ const PrePostingDialog = ({
               <PlayIcon />
             </PlayIconOverlay>
           </VideoPreview>
-          
+
           <VideoInfo>
             <VideoTitle>{asset.title || 'Untitled'}</VideoTitle>
             <VideoDuration>
-              Duration: {asset.duration ? formatTime(asset.duration) : 'Unknown'} 
-              {creatorInfo.max_video_post_duration_sec && 
+              Duration: {asset.duration ? formatTime(asset.duration) : 'Unknown'}
+              {creatorInfo.max_video_post_duration_sec &&
                 ` / Max: ${formatTime(creatorInfo.max_video_post_duration_sec)}`}
             </VideoDuration>
           </VideoInfo>
-          
+
           {/* Warning for duration */}
           {durationExceeded && (
             <WarningMessage>
@@ -337,7 +441,7 @@ const PrePostingDialog = ({
             </WarningMessage>
           )}
         </LeftColumn>
-        
+
         <RightColumn>
           {/* Creator Info Header */}
           <Header>
@@ -347,69 +451,90 @@ const PrePostingDialog = ({
               <CreatorUsername>@{creatorInfo.creator_username}</CreatorUsername>
             </CreatorInfo>
           </Header>
-          
+
           {/* Configurable Settings */}
           <SettingsSection>
             <SettingsTitle>Post Settings</SettingsTitle>
-            
+
             <SettingRow>
               <SettingLabel>Privacy Level</SettingLabel>
-              <select 
-                value={privacyLevel}
-                onChange={(e) => setPrivacyLevel(e.target.value)}
-              >
-                {creatorInfo.privacy_level_options.map(option => (
-                  <option key={option} value={option}>{parsePrivacyLevel(option)}</option>
-                ))}
-              </select>
+              {/* Custom Select for Privacy Level */}
+              <CustomSelectWrapper ref={privacySelectRef}>
+                <CustomSelectDisplay onClick={() => setIsPrivacyDropdownOpen(!isPrivacyDropdownOpen)}>
+                  {parsePrivacyLevel(privacyLevel)}
+                  <FiChevronDown />
+                </CustomSelectDisplay>
+                {isPrivacyDropdownOpen && (
+                  <CustomSelectDropdown>
+                    {creatorInfo.privacy_level_options.map(option => (
+                      <CustomSelectOption
+                        key={option}
+                        className={privacyLevel === option ? 'selected' : ''}
+                        onClick={() => {
+                          setPrivacyLevel(option);
+                          setIsPrivacyDropdownOpen(false);
+                        }}
+                      >
+                        {parsePrivacyLevel(option)}
+                      </CustomSelectOption>
+                    ))}
+                  </CustomSelectDropdown>
+                )}
+              </CustomSelectWrapper>
             </SettingRow>
-            
+
             <SettingRow>
               <SettingLabel>Disable Comments</SettingLabel>
-              <Switch 
+              <Switch
                 toggled={commentDisabled}
                 onChange={setCommentDisabled}
                 activeColor={TOGGLE_ACTIVE_COLOR}
                 inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
-            
+
             <SettingRow>
               <SettingLabel>Disable Duets</SettingLabel>
-              <Switch 
+              <Switch
                 toggled={duetDisabled}
                 onChange={setDuetDisabled}
                 activeColor={TOGGLE_ACTIVE_COLOR}
                 inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
-            
+
             <SettingRow>
               <SettingLabel>Disable Stitch</SettingLabel>
-              <Switch 
+              <Switch
                 toggled={stitchDisabled}
                 onChange={setStitchDisabled}
                 activeColor={TOGGLE_ACTIVE_COLOR}
                 inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
-            
+
             <SettingRow>
               <SettingLabel>Video Cover Timestamp (ms)</SettingLabel>
-              <input 
-                type="number" 
+              {/* Custom Input for Video Cover Timestamp */}
+              <StyledMaterialInput
+                type="text" // Use text for better styling control
                 value={videoCoverTimestampMs}
                 onChange={(e) => {
-                  const value = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
-                  setVideoCoverTimestampMs(value);
+                  const value = e.target.value;
+                  // Allow empty string temporarily for user input, parse to number on blur or confirm
+                  // For simplicity here, we'll parse on change and handle non-numeric input
+                  const numValue = parseInt(value, 10);
+                  if (!isNaN(numValue) || value === '') {
+                     setVideoCoverTimestampMs(value === '' ? 0 : numValue);
+                  }
                 }}
                 placeholder="0"
               />
             </SettingRow>
-            
+
             <SettingRow>
               <SettingLabel>Brand Content</SettingLabel>
-              <Switch 
+              <Switch
                 toggled={brandContentEnabled}
                 onChange={(value) => {
                   setBrandContentEnabled(value);
@@ -422,22 +547,22 @@ const PrePostingDialog = ({
                 inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
-            
+
             {brandContentEnabled && (
               <>
                 <NestedSettingRow>
                   <SettingLabel>Your Brand</SettingLabel>
-                  <Switch 
+                  <Switch
                     toggled={yourBrandEnabled}
                     onChange={setYourBrandEnabled}
                     activeColor={TOGGLE_ACTIVE_COLOR}
                     inactiveColor={TOGGLE_INACTIVE_COLOR}
                   />
                 </NestedSettingRow>
-                
+
                 <NestedSettingRow>
                   <SettingLabel>Branded Content</SettingLabel>
-                  <Switch 
+                  <Switch
                     toggled={brandedContentEnabled}
                     onChange={setBrandedContentEnabled}
                     activeColor={TOGGLE_ACTIVE_COLOR}
@@ -446,10 +571,10 @@ const PrePostingDialog = ({
                 </NestedSettingRow>
               </>
             )}
-            
+
             <SettingRow>
               <SettingLabel>AI-Generated Content</SettingLabel>
-              <Switch 
+              <Switch
                 toggled={isAigc}
                 onChange={setIsAigc}
                 activeColor={TOGGLE_ACTIVE_COLOR}
@@ -457,28 +582,27 @@ const PrePostingDialog = ({
               />
             </SettingRow>
           </SettingsSection>
-          
-          <ComplianceText>
-            {getComplianceText()}
-          </ComplianceText>
-          
-          {/* Action Buttons */}
-          <ButtonRow>
-            <Button 
-              color={ButtonColors.SECONDARY} 
-              onClick={onClose}
-            >
-              Cancel
-            </Button>
-            <Button 
-              color={ButtonColors.PRIMARY} 
-              onClick={handleConfirm}
-              disabled={durationExceeded}
-            >
-              Post to TikTok
-            </Button>
-          </ButtonRow>
         </RightColumn>
+
+        <ComplianceText>
+          {getComplianceText()}
+        </ComplianceText>
+
+        <ButtonRow>
+          <Button
+            color={ButtonColors.SECONDARY}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            color={ButtonColors.PRIMARY}
+            onClick={handleConfirm}
+            disabled={durationExceeded}
+          >
+            Post to TikTok
+          </Button>
+        </ButtonRow>
       </Content>
     </Modal>
   );
