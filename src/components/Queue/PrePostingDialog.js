@@ -45,7 +45,7 @@ const Content = styled.div`
   background: white;
   width: 800px;
   max-width: 90vw;
-  padding: 20px 18px;
+  padding: 25px 25px;
   border-radius: 12px;
   margin: 0 18px;
   display: grid;
