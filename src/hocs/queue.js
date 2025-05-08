@@ -437,6 +437,7 @@ export const QueueProvider = ({ children }) => {
         try {
             // Pass the settings to the post API
             await postAsset(assetId, postSettings);
+            alert("Video posted successfully, it may take a few minutes to process and be visible on your profile.");
             
             // Update status to posting
             dispatch({
