@@ -2,7 +2,11 @@ import { styled } from 'styled-components';
 import { useState, useRef, useEffect } from 'react'; // Added useRef and useEffect
 import Modal from 'components/Modal';
 import { Button } from 'components/Button';
-import { ButtonColors } from 'constants';
+import {
+  ButtonColors,
+  TT_MUSIC_CMP_URL,
+  TT_BC_CMP_URL
+} from 'constants';
 import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
 import Switch from './PostSettings/Switch';
 
@@ -51,8 +55,8 @@ const Content = styled.div`
   border-radius: 12px;
   margin: 0 18px;
   display: grid;
-  grid-template-columns: 300px 1fr; // Keep original column definition for top part
-  grid-template-rows: auto auto auto; // Define rows for content, compliance, buttons
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: auto auto auto;
   grid-template-areas:
     "leftCol rightCol"
     "compliance compliance"
@@ -373,27 +377,24 @@ const PrePostingDialog = ({
 
   // Generate compliance text based on brand settings
   const getComplianceText = () => {
-    if (brandContentEnabled) {
-      if (brandedContentEnabled) {
-        return (
-          <>
-            By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer">Branded Content Policy</a> and <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
-          </>
-        );
-      } else if (yourBrandEnabled) {
-        return (
-          <>
-            By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
-          </>
-        );
-      }
-    }
+    const musicLinkPart = 
+      <a href={TT_MUSIC_CMP_URL} target="_blank" rel="noopener noreferrer">
+        Music Usage Confirmation
+      </a>
+    
+    const brandedContentLinkPart =
+      <a href={TT_BC_CMP_URL} target="_blank" rel="noopener noreferrer">
+        and Branded Content Policy
+      </a>
 
-    return (
+    const links = (
       <>
-        By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
+        {musicLinkPart}
+        {brandedContentEnabled && (<> and {brandedContentLinkPart}</>)}
       </>
     );
+
+    return <>By posting, you agree to TikTok's {links}.</>;
   };
 
   const handleConfirm = () => {
