@@ -5,6 +5,7 @@ import React, {
     useEffect,
     useCallback,
     useRef,
+    useState,
 } from 'react';
 import {
     listAssets,
@@ -13,6 +14,7 @@ import {
     deleteAssets,
     processAsset,
     getAssetDetails,
+    getCreatorPostingInfo,
 } from 'services/backend';
 import {
     ASSET_STATUS,
@@ -194,6 +196,13 @@ export const QueueProvider = ({ children }) => {
     const [state, dispatch] = useReducer(queueReducer, initialState);
     const activeFetches = useRef(new Set()); // Track active full fetches per channel
     const { assetUpdateQueueRef, assetUpdatedTs } = useNotification();
+    
+    // State for creator info dialog
+    const [creatorInfoDialogOpen, setCreatorInfoDialogOpen] = useState(false);
+    const [activeAssetForPosting, setActiveAssetForPosting] = useState(null);
+    const [creatorInfo, setCreatorInfo] = useState(null);
+    const [isCreatorInfoLoading, setIsCreatorInfoLoading] = useState(false);
+    const [creatorInfoError, setCreatorInfoError] = useState(null);
 
     const fetchAllAssetsForChannel = useCallback(async (channelId, isRefresh = false) => {
         if (!channelId || activeFetches.current.has(channelId)) {
@@ -375,31 +384,68 @@ export const QueueProvider = ({ children }) => {
             const actionKey = `post-${assetId}`;
             if (isActionInProgress(actionKey)) return;
 
-            if (!window.confirm('Are you sure you want to post this video now?')) {
-                return;
-            }
             dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
-            const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
 
             try {
-                await postAsset(assetId);
-                // Update status to posting - actual status updates will come from WebSocket
-                dispatch({
-                    type: actionTypes.SET_ASSET,
-                    payload: {
-                        channelId,
-                        asset: { ...originalAsset, id: assetId, status: ASSET_STATUS.POSTING },
-                    },
+                // First, get the asset details to check duration and get the title
+                const assetDetails = await getAssetDetails(assetId);
+                
+                // Then, fetch creator information
+                setIsCreatorInfoLoading(true);
+                setCreatorInfoError(null);
+                const creatorInfoData = await getCreatorPostingInfo(channelId);
+                setCreatorInfo(creatorInfoData);
+                
+                // Set the active asset and open the dialog
+                setActiveAssetForPosting({
+                    ...assetDetails,
+                    channelId
                 });
+                setCreatorInfoDialogOpen(true);
+                
             } catch (error) {
-                console.error('Failed to post asset:', error);
-                alert('Failed to post video. Please try again.');
+                console.error('Failed to fetch creator info:', error);
+                setCreatorInfoError(error.message || 'Failed to fetch creator information');
+                alert('Failed to fetch creator information. Please try again.');
             } finally {
+                setIsCreatorInfoLoading(false);
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
         [state.queues, isActionInProgress]
     );
+    
+    // New function to handle confirmation from dialog
+    const handlePostConfirm = useCallback(async (postSettings) => {
+        if (!activeAssetForPosting) return;
+        
+        const { id: assetId, channelId } = activeAssetForPosting;
+        const actionKey = `post-${assetId}`;
+        
+        dispatch({ type: actionTypes.ACTION_START, payload: { actionKey } });
+        const originalAsset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
+
+        try {
+            // Pass the settings to the post API
+            await postAsset(assetId, postSettings);
+            
+            // Update status to posting
+            dispatch({
+                type: actionTypes.SET_ASSET,
+                payload: {
+                    channelId,
+                    asset: { ...originalAsset, id: assetId, status: ASSET_STATUS.POSTING },
+                },
+            });
+        } catch (error) {
+            console.error('Failed to post asset:', error);
+            alert('Failed to post video. Please try again.');
+        } finally {
+            setCreatorInfoDialogOpen(false);
+            setActiveAssetForPosting(null);
+            dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
+        }
+    }, [activeAssetForPosting, state.queues]);
 
     const handleDeleteAsset = useCallback(
         async (channelId, assetId) => {
@@ -489,6 +535,17 @@ export const QueueProvider = ({ children }) => {
         handleDeleteAsset,
         handleReprocessAsset,
         isActionInProgress,
+        // Creator info dialog related
+        creatorInfoDialogOpen,
+        activeAssetForPosting,
+        creatorInfo,
+        isCreatorInfoLoading,
+        creatorInfoError,
+        handlePostConfirm,
+        closeCreatorInfoDialog: () => {
+            setCreatorInfoDialogOpen(false);
+            setActiveAssetForPosting(null);
+        },
     };
 
     return <QueueContext.Provider value={value}>{children}</QueueContext.Provider>;
@@ -537,5 +594,13 @@ export const useQueue = (channelId) => {
         deleteAsset: (assetId) => context.handleDeleteAsset(channelId, assetId),
         reprocessAsset: (assetId) => context.handleReprocessAsset(channelId, assetId),
         isActionInProgress: context.isActionInProgress, // Pass this through
+        // Creator info dialog related
+        creatorInfoDialogOpen: context.creatorInfoDialogOpen,
+        activeAssetForPosting: context.activeAssetForPosting,
+        creatorInfo: context.creatorInfo,
+        isCreatorInfoLoading: context.isCreatorInfoLoading,
+        creatorInfoError: context.creatorInfoError,
+        handlePostConfirm: (postSettings) => context.handlePostConfirm(postSettings),
+        closeCreatorInfoDialog: () => context.closeCreatorInfoDialog(),
     };
 };

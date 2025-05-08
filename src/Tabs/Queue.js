@@ -9,6 +9,7 @@ import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDispla
 import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
 import PlayerModal from 'components/Queue/PlayerModal';
 import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
+import PrePostingDialog from 'components/Queue/PrePostingDialog';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
 import ChannelList from 'components/ChannelList';
@@ -103,7 +104,19 @@ const AssetsView = () => {
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
     const [playingAsset, setPlayingAsset] = useState(null);
 
-    const { assets, isLoading, error, refreshQueue } = useQueue(highlightedChannel?.id);
+    const { 
+        assets, 
+        isLoading, 
+        error, 
+        refreshQueue,
+        creatorInfoDialogOpen,
+        activeAssetForPosting,
+        creatorInfo,
+        isCreatorInfoLoading,
+        creatorInfoError,
+        handlePostConfirm,
+        closeCreatorInfoDialog
+    } = useQueue(highlightedChannel?.id);
 
     useEffect(() => {
         if (channels && channels.length > 0) {
@@ -285,6 +298,18 @@ const AssetsView = () => {
 
             {playingAsset && (
                 <PlayerModal playingAsset={playingAsset} onClose={() => setPlayingAsset(null)} />
+            )}
+
+            {creatorInfoDialogOpen && activeAssetForPosting && (
+                <PrePostingDialog
+                    creatorInfo={creatorInfo}
+                    asset={activeAssetForPosting}
+                    channelId={highlightedChannel?.id}
+                    onClose={closeCreatorInfoDialog}
+                    onConfirm={handlePostConfirm}
+                    isLoading={isCreatorInfoLoading}
+                    error={creatorInfoError}
+                />
             )}
         </Container>
     );
