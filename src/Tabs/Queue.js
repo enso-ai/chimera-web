@@ -296,10 +296,6 @@ const AssetsView = () => {
                 />
             )}
 
-            {playingAsset && (
-                <PlayerModal playingAsset={playingAsset} onClose={() => setPlayingAsset(null)} />
-            )}
-
             {creatorInfoDialogOpen && activeAssetForPosting && (
                 <PrePostingDialog
                     creatorInfo={creatorInfo}
@@ -309,8 +305,16 @@ const AssetsView = () => {
                     onConfirm={handlePostConfirm}
                     isLoading={isCreatorInfoLoading}
                     error={creatorInfoError}
+                    onPlayVideo={(asset) => {
+                        if (asset) setPlayingAsset(asset);
+                    }}
                 />
             )}
+
+            {playingAsset && (
+                <PlayerModal playingAsset={playingAsset} onClose={() => setPlayingAsset(null)} />
+            )}
+
         </Container>
     );
 };

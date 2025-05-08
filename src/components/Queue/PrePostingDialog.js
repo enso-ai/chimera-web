@@ -20,6 +20,21 @@ const formatTime = (seconds) => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
+const parsePrivacyLevel = (level) => {
+  switch (level) {
+    case 'PUBLIC_TO_EVERYONE':
+      return 'Public';
+    case 'MUTUAL_FOLLOW_FRIENDS':
+      return 'Friends Only';
+    case 'FOLLOWER_OF_CREATOR':
+      return 'Followers';
+    case 'SELF_ONLY':
+      return 'Private';
+    default:
+      return level; // Fallback to display actual value if unknown
+  }
+};
+
 // Basic styling for components
 const Content = styled.div`
   background: white;
@@ -189,7 +204,8 @@ const PrePostingDialog = ({
   onClose,
   onConfirm,
   isLoading,
-  error 
+  error,
+  onPlayVideo,
 }) => {
   // State for configurable settings
   const [privacyLevel, setPrivacyLevel] = useState(
@@ -292,7 +308,9 @@ const PrePostingDialog = ({
           {/* Video Preview */}
           <VideoPreview>
             <VideoThumbnail src={asset.thumbnail_url} alt={asset.title || 'Video thumbnail'} />
-            <PlayIconOverlay>
+            <PlayIconOverlay
+              onClick={() => onPlayVideo(asset)}
+            >
               <PlayIcon />
             </PlayIconOverlay>
           </VideoPreview>
@@ -336,13 +354,7 @@ const PrePostingDialog = ({
                 onChange={(e) => setPrivacyLevel(e.target.value)}
               >
                 {creatorInfo.privacy_level_options.map(option => (
-                  <option key={option} value={option}>
-                    {option === 'PUBLIC_TO_EVERYONE' ? 'Public' : 
-                     option === 'MUTUAL_FOLLOW_FRIENDS' ? 'Friends Only' : 
-                     option === 'FOLLOWER_OF_CREATOR' ? 'Followers' :
-                     option === 'SELF_ONLY' ? 'Private' : 
-                     option /* Fallback to display actual value if unknown */}
-                  </option>
+                  <option key={option} value={option}>{parsePrivacyLevel(option)}</option>
                 ))}
               </select>
             </SettingRow>
