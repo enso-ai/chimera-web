@@ -315,6 +315,10 @@ const PrePostingDialog = ({
   const [brandedContentEnabled, setBrandedContentEnabled] = useState(false);
   const [isAigc, setIsAigc] = useState(false);
 
+  // Ref for tracking brand content toggle and privacy level changes
+  const brandContentToggleRef = useRef(null);
+  const privacyLevelRef = useRef(null);
+
   // State for custom select dropdown
   const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = useState(false);
   const privacySelectRef = useRef(null);
@@ -331,6 +335,34 @@ const PrePostingDialog = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [privacySelectRef]);
+
+  useEffect(() => {
+    try {
+      if (brandContentEnabled && brandContentToggleRef.current == false) {
+        // brand content toggle was just enabled
+        if (privacyLevel === 'SELF_ONLY') {
+          // privacy level is SELF_ONLY, set to PUBLIC_TO_EVERYONE
+          if (creatorInfo.type === 'PUBLIC') {
+            // for public account, set privacy level to public to all
+            setPrivacyLevel('PUBLIC_TO_EVERYONE');
+          } else {
+            // for private account, set privacy level to mutual follow friends
+            setPrivacyLevel('FOLLOWER_OF_CREATOR');
+          }
+        }
+      } else if (privacyLevel !== privacyLevelRef.current && privacyLevel === 'SELF_ONLY') {
+        // privacy level was just changed to private, check brand content toggle
+        if (brandContentEnabled) {
+          // for private content, the brand content toggle should be disabled
+          setBrandContentEnabled(false);
+        }
+      }
+
+    } finally {
+      brandContentToggleRef.current = brandContentEnabled;
+      privacyLevelRef.current = privacyLevel;
+    }
+  }, [privacyLevel, brandContentEnabled])
 
 
   // Determine if video duration exceeds maximum
