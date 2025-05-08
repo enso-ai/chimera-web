@@ -27,6 +27,8 @@ const SwitchButton = styled.span`
     border-radius: 8px;
     transition: left 0.2s ease-in-out;
     background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
 
     ${SwitchLabel}:active & {
         width: 15px;

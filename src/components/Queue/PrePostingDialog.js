@@ -1,9 +1,14 @@
 import { styled } from 'styled-components';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Modal from 'components/Modal';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
 import { FiPlay } from 'react-icons/fi';
+import Switch from './PostSettings/Switch';
+
+// Define colors for the toggle switches
+const TOGGLE_ACTIVE_COLOR = ButtonColors.POSITIVE;
+const TOGGLE_INACTIVE_COLOR = ButtonColors.NEGATIVE;
 
 // Helper function to format seconds into MM:SS or HH:MM:SS format
 const formatTime = (seconds) => {
@@ -361,28 +366,31 @@ const PrePostingDialog = ({
             
             <SettingRow>
               <SettingLabel>Disable Comments</SettingLabel>
-              <input 
-                type="checkbox" 
-                checked={commentDisabled}
-                onChange={(e) => setCommentDisabled(e.target.checked)}
+              <Switch 
+                toggled={commentDisabled}
+                onChange={setCommentDisabled}
+                activeColor={TOGGLE_ACTIVE_COLOR}
+                inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
             
             <SettingRow>
               <SettingLabel>Disable Duets</SettingLabel>
-              <input 
-                type="checkbox" 
-                checked={duetDisabled}
-                onChange={(e) => setDuetDisabled(e.target.checked)}
+              <Switch 
+                toggled={duetDisabled}
+                onChange={setDuetDisabled}
+                activeColor={TOGGLE_ACTIVE_COLOR}
+                inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
             
             <SettingRow>
               <SettingLabel>Disable Stitch</SettingLabel>
-              <input 
-                type="checkbox" 
-                checked={stitchDisabled}
-                onChange={(e) => setStitchDisabled(e.target.checked)}
+              <Switch 
+                toggled={stitchDisabled}
+                onChange={setStitchDisabled}
+                activeColor={TOGGLE_ACTIVE_COLOR}
+                inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
             
@@ -401,16 +409,17 @@ const PrePostingDialog = ({
             
             <SettingRow>
               <SettingLabel>Brand Content</SettingLabel>
-              <input 
-                type="checkbox" 
-                checked={brandContentEnabled}
-                onChange={(e) => {
-                  setBrandContentEnabled(e.target.checked);
-                  if (!e.target.checked) {
+              <Switch 
+                toggled={brandContentEnabled}
+                onChange={(value) => {
+                  setBrandContentEnabled(value);
+                  if (!value) {
                     setYourBrandEnabled(false);
                     setBrandedContentEnabled(false);
                   }
                 }}
+                activeColor={TOGGLE_ACTIVE_COLOR}
+                inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
             
@@ -418,19 +427,21 @@ const PrePostingDialog = ({
               <>
                 <NestedSettingRow>
                   <SettingLabel>Your Brand</SettingLabel>
-                  <input 
-                    type="checkbox" 
-                    checked={yourBrandEnabled}
-                    onChange={(e) => setYourBrandEnabled(e.target.checked)}
+                  <Switch 
+                    toggled={yourBrandEnabled}
+                    onChange={setYourBrandEnabled}
+                    activeColor={TOGGLE_ACTIVE_COLOR}
+                    inactiveColor={TOGGLE_INACTIVE_COLOR}
                   />
                 </NestedSettingRow>
                 
                 <NestedSettingRow>
                   <SettingLabel>Branded Content</SettingLabel>
-                  <input 
-                    type="checkbox" 
-                    checked={brandedContentEnabled}
-                    onChange={(e) => setBrandedContentEnabled(e.target.checked)}
+                  <Switch 
+                    toggled={brandedContentEnabled}
+                    onChange={setBrandedContentEnabled}
+                    activeColor={TOGGLE_ACTIVE_COLOR}
+                    inactiveColor={TOGGLE_INACTIVE_COLOR}
                   />
                 </NestedSettingRow>
               </>
@@ -438,10 +449,11 @@ const PrePostingDialog = ({
             
             <SettingRow>
               <SettingLabel>AI-Generated Content</SettingLabel>
-              <input 
-                type="checkbox" 
-                checked={isAigc}
-                onChange={(e) => setIsAigc(e.target.checked)}
+              <Switch 
+                toggled={isAigc}
+                onChange={setIsAigc}
+                activeColor={TOGGLE_ACTIVE_COLOR}
+                inactiveColor={TOGGLE_INACTIVE_COLOR}
               />
             </SettingRow>
           </SettingsSection>
