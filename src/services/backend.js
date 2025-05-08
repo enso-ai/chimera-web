@@ -175,8 +175,8 @@ export const getCreatorPostingInfo = async (channelId) => {
     }
 };
 
-export const postAsset = async (fileId) => {
-    const response = await api.post(`assets/${fileId}/post`);
+export const postAsset = async (fileId, postSettings = {}) => {
+    const response = await api.post(`assets/${fileId}/post`, postSettings);
     return response.data;
 };
 
