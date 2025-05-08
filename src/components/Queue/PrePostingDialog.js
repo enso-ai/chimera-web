@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Modal from 'components/Modal';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
+import { FiPlay } from 'react-icons/fi';
 
 // Helper function to format seconds into MM:SS or HH:MM:SS format
 const formatTime = (seconds) => {
@@ -22,17 +23,79 @@ const formatTime = (seconds) => {
 // Basic styling for components
 const Content = styled.div`
   background: white;
-  min-width: 450px;
-  max-width: 550px;
-  padding: 20px 40px;
+  width: 800px;
+  max-width: 90vw;
+  padding: 20px 18px;
   border-radius: 12px;
   margin: 0 18px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+`;
+
+const LeftColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const RightColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const VideoPreview = styled.div`
+  width: 100%;
+  height: 400px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background-color: #000;
+  margin-bottom: 16px;
+`;
+
+const VideoThumbnail = styled.img`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`;
+
+const PlayIconOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const PlayIcon = styled(FiPlay)`
+  color: white;
+  width: 48px;
+  height: 48px;
+`;
+
+const VideoInfo = styled.div`
+  margin-top: 12px;
+`;
+
+const VideoTitle = styled.h3`
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+`;
+
+const VideoDuration = styled.div`
+  font-size: 14px;
+  color: #666;
 `;
 
 const Header = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 `;
 
 const Avatar = styled.img`
@@ -59,7 +122,15 @@ const CreatorUsername = styled.p`
 `;
 
 const SettingsSection = styled.div`
-  margin: 20px 0;
+  margin: 16px 0;
+`;
+
+const SettingsTitle = styled.h3`
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
 `;
 
 const SettingRow = styled.div`
@@ -68,6 +139,11 @@ const SettingRow = styled.div`
   align-items: center;
   padding: 12px 0;
   border-bottom: 1px solid #eee;
+`;
+
+const NestedSettingRow = styled(SettingRow)`
+  margin-left: 24px;
+  padding: 8px 0;
 `;
 
 const SettingLabel = styled.label`
@@ -81,6 +157,22 @@ const WarningMessage = styled.div`
   padding: 12px;
   background-color: #feeded;
   border-radius: 4px;
+`;
+
+const ComplianceText = styled.div`
+  font-size: 12px;
+  color: #666;
+  margin: 16px 0;
+  line-height: 1.5;
+  
+  a {
+    color: #2196f3;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 `;
 
 const ButtonRow = styled.div`
@@ -108,14 +200,42 @@ const PrePostingDialog = ({
   const [stitchDisabled, setStitchDisabled] = useState(creatorInfo?.stitch_disabled || false);
   
   // Additional settings from API documentation
-  const [videoCoverTimestampMs, setVideoCoverTimestampMs] = useState(null);
-  const [brandContentToggle, setBrandContentToggle] = useState(false);
-  const [brandOrganicToggle, setBrandOrganicToggle] = useState(false);
+  const [videoCoverTimestampMs, setVideoCoverTimestampMs] = useState(0);
+  
+  // Brand content settings with hierarchy
+  const [brandContentEnabled, setBrandContentEnabled] = useState(false);
+  const [yourBrandEnabled, setYourBrandEnabled] = useState(false);
+  const [brandedContentEnabled, setBrandedContentEnabled] = useState(false);
   const [isAigc, setIsAigc] = useState(false);
 
   // Determine if video duration exceeds maximum
   const durationExceeded = asset?.duration && creatorInfo?.max_video_post_duration_sec && 
                           asset.duration > creatorInfo.max_video_post_duration_sec;
+  
+  // Generate compliance text based on brand settings
+  const getComplianceText = () => {
+    if (brandContentEnabled) {
+      if (brandedContentEnabled) {
+        return (
+          <>
+            By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer">Branded Content Policy</a> and <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
+          </>
+        );
+      } else if (yourBrandEnabled) {
+        return (
+          <>
+            By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
+          </>
+        );
+      }
+    }
+    
+    return (
+      <>
+        By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.
+      </>
+    );
+  };
   
   const handleConfirm = () => {
     // Prevent posting if duration exceeds maximum
@@ -131,9 +251,9 @@ const PrePostingDialog = ({
       disable_comment: commentDisabled,
       disable_duet: duetDisabled,
       disable_stitch: stitchDisabled,
-      video_cover_timestamp_ms: videoCoverTimestampMs,
-      brand_content_toggle: brandContentToggle,
-      brand_organic_toggle: brandOrganicToggle,
+      video_cover_timestamp_ms: videoCoverTimestampMs || 0,
+      brand_content_toggle: brandContentEnabled && yourBrandEnabled,
+      brand_organic_toggle: brandContentEnabled && brandedContentEnabled,
       is_aigc: isAigc
     });
   };
@@ -168,147 +288,173 @@ const PrePostingDialog = ({
   return (
     <Modal onClose={onClose}>
       <Content>
-        <h2>Confirm TikTok Post</h2>
-        
-        {/* Creator Info Header */}
-        <Header>
-          <Avatar src={creatorInfo.creator_avatar_url} alt={creatorInfo.creator_nickname} />
-          <CreatorInfo>
-            <CreatorName>{creatorInfo.creator_nickname}</CreatorName>
-            <CreatorUsername>@{creatorInfo.creator_username}</CreatorUsername>
-          </CreatorInfo>
-        </Header>
-        
-        {/* Video Info Section */}
-        <SettingsSection>
-          <SettingRow>
-            <SettingLabel>Video Title</SettingLabel>
-            <div>{asset.title || 'Untitled'}</div>
-          </SettingRow>
-          <SettingRow>
-            <SettingLabel>Video Duration</SettingLabel>
-            <div>
-              {asset.duration ? formatTime(asset.duration) : 'Unknown'} 
+        <LeftColumn>
+          {/* Video Preview */}
+          <VideoPreview>
+            <VideoThumbnail src={asset.thumbnail_url} alt={asset.title || 'Video thumbnail'} />
+            <PlayIconOverlay>
+              <PlayIcon />
+            </PlayIconOverlay>
+          </VideoPreview>
+          
+          <VideoInfo>
+            <VideoTitle>{asset.title || 'Untitled'}</VideoTitle>
+            <VideoDuration>
+              Duration: {asset.duration ? formatTime(asset.duration) : 'Unknown'} 
               {creatorInfo.max_video_post_duration_sec && 
                 ` / Max: ${formatTime(creatorInfo.max_video_post_duration_sec)}`}
-            </div>
-          </SettingRow>
-        </SettingsSection>
-        
-        {/* Warning for duration */}
-        {durationExceeded && (
-          <WarningMessage>
-            Warning: Your video duration ({formatTime(asset.duration)}) exceeds the maximum allowed for your account ({formatTime(creatorInfo.max_video_post_duration_sec)}).
-            The video cannot be posted to TikTok.
-          </WarningMessage>
-        )}
-        
-        {/* Configurable Settings */}
-        <SettingsSection>
-          <h3>Post Settings</h3>
+            </VideoDuration>
+          </VideoInfo>
           
-          <SettingRow>
-            <SettingLabel>Privacy Level</SettingLabel>
-            <select 
-              value={privacyLevel}
-              onChange={(e) => setPrivacyLevel(e.target.value)}
+          {/* Warning for duration */}
+          {durationExceeded && (
+            <WarningMessage>
+              Warning: Your video duration exceeds the maximum allowed for your account.
+              The video cannot be posted to TikTok.
+            </WarningMessage>
+          )}
+        </LeftColumn>
+        
+        <RightColumn>
+          {/* Creator Info Header */}
+          <Header>
+            <Avatar src={creatorInfo.creator_avatar_url} alt={creatorInfo.creator_nickname} />
+            <CreatorInfo>
+              <CreatorName>{creatorInfo.creator_nickname}</CreatorName>
+              <CreatorUsername>@{creatorInfo.creator_username}</CreatorUsername>
+            </CreatorInfo>
+          </Header>
+          
+          {/* Configurable Settings */}
+          <SettingsSection>
+            <SettingsTitle>Post Settings</SettingsTitle>
+            
+            <SettingRow>
+              <SettingLabel>Privacy Level</SettingLabel>
+              <select 
+                value={privacyLevel}
+                onChange={(e) => setPrivacyLevel(e.target.value)}
+              >
+                {creatorInfo.privacy_level_options.map(option => (
+                  <option key={option} value={option}>
+                    {option === 'PUBLIC_TO_EVERYONE' ? 'Public' : 
+                     option === 'MUTUAL_FOLLOW_FRIENDS' ? 'Friends Only' : 
+                     option === 'FOLLOWER_OF_CREATOR' ? 'Followers' :
+                     option === 'SELF_ONLY' ? 'Private' : 
+                     option /* Fallback to display actual value if unknown */}
+                  </option>
+                ))}
+              </select>
+            </SettingRow>
+            
+            <SettingRow>
+              <SettingLabel>Disable Comments</SettingLabel>
+              <input 
+                type="checkbox" 
+                checked={commentDisabled}
+                onChange={(e) => setCommentDisabled(e.target.checked)}
+              />
+            </SettingRow>
+            
+            <SettingRow>
+              <SettingLabel>Disable Duets</SettingLabel>
+              <input 
+                type="checkbox" 
+                checked={duetDisabled}
+                onChange={(e) => setDuetDisabled(e.target.checked)}
+              />
+            </SettingRow>
+            
+            <SettingRow>
+              <SettingLabel>Disable Stitch</SettingLabel>
+              <input 
+                type="checkbox" 
+                checked={stitchDisabled}
+                onChange={(e) => setStitchDisabled(e.target.checked)}
+              />
+            </SettingRow>
+            
+            <SettingRow>
+              <SettingLabel>Video Cover Timestamp (ms)</SettingLabel>
+              <input 
+                type="number" 
+                value={videoCoverTimestampMs}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : parseInt(e.target.value, 10);
+                  setVideoCoverTimestampMs(value);
+                }}
+                placeholder="0"
+              />
+            </SettingRow>
+            
+            <SettingRow>
+              <SettingLabel>Brand Content</SettingLabel>
+              <input 
+                type="checkbox" 
+                checked={brandContentEnabled}
+                onChange={(e) => {
+                  setBrandContentEnabled(e.target.checked);
+                  if (!e.target.checked) {
+                    setYourBrandEnabled(false);
+                    setBrandedContentEnabled(false);
+                  }
+                }}
+              />
+            </SettingRow>
+            
+            {brandContentEnabled && (
+              <>
+                <NestedSettingRow>
+                  <SettingLabel>Your Brand</SettingLabel>
+                  <input 
+                    type="checkbox" 
+                    checked={yourBrandEnabled}
+                    onChange={(e) => setYourBrandEnabled(e.target.checked)}
+                  />
+                </NestedSettingRow>
+                
+                <NestedSettingRow>
+                  <SettingLabel>Branded Content</SettingLabel>
+                  <input 
+                    type="checkbox" 
+                    checked={brandedContentEnabled}
+                    onChange={(e) => setBrandedContentEnabled(e.target.checked)}
+                  />
+                </NestedSettingRow>
+              </>
+            )}
+            
+            <SettingRow>
+              <SettingLabel>AI-Generated Content</SettingLabel>
+              <input 
+                type="checkbox" 
+                checked={isAigc}
+                onChange={(e) => setIsAigc(e.target.checked)}
+              />
+            </SettingRow>
+          </SettingsSection>
+          
+          <ComplianceText>
+            {getComplianceText()}
+          </ComplianceText>
+          
+          {/* Action Buttons */}
+          <ButtonRow>
+            <Button 
+              color={ButtonColors.SECONDARY} 
+              onClick={onClose}
             >
-              {creatorInfo.privacy_level_options.map(option => (
-                <option key={option} value={option}>
-                  {option === 'PUBLIC_TO_EVERYONE' ? 'Public' : 
-                   option === 'MUTUAL_FOLLOW_FRIENDS' ? 'Friends Only' : 
-                   option === 'FOLLOWER_OF_CREATOR' ? 'Followers' :
-                   option === 'SELF_ONLY' ? 'Private' : 
-                   option /* Fallback to display actual value if unknown */}
-                </option>
-              ))}
-            </select>
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Disable Comments</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={commentDisabled}
-              onChange={(e) => setCommentDisabled(e.target.checked)}
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Disable Duets</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={duetDisabled}
-              onChange={(e) => setDuetDisabled(e.target.checked)}
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Disable Stitch</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={stitchDisabled}
-              onChange={(e) => setStitchDisabled(e.target.checked)}
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Video Cover Timestamp (ms)</SettingLabel>
-            <input 
-              type="number" 
-              value={videoCoverTimestampMs || ''}
-              onChange={(e) => {
-                const value = e.target.value === '' ? null : parseInt(e.target.value, 10);
-                setVideoCoverTimestampMs(value);
-              }}
-              placeholder="0"
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Brand Content</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={brandContentToggle}
-              onChange={(e) => setBrandContentToggle(e.target.checked)}
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>Brand Organic</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={brandOrganicToggle}
-              onChange={(e) => setBrandOrganicToggle(e.target.checked)}
-            />
-          </SettingRow>
-          
-          <SettingRow>
-            <SettingLabel>AI-Generated Content</SettingLabel>
-            <input 
-              type="checkbox" 
-              checked={isAigc}
-              onChange={(e) => setIsAigc(e.target.checked)}
-            />
-          </SettingRow>
-        </SettingsSection>
-        
-        {/* Action Buttons */}
-        <ButtonRow>
-          <Button 
-            color={ButtonColors.SECONDARY} 
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button 
-            color={ButtonColors.PRIMARY} 
-            onClick={handleConfirm}
-            disabled={durationExceeded}
-          >
-            Post to TikTok
-          </Button>
-        </ButtonRow>
+              Cancel
+            </Button>
+            <Button 
+              color={ButtonColors.PRIMARY} 
+              onClick={handleConfirm}
+              disabled={durationExceeded}
+            >
+              Post to TikTok
+            </Button>
+          </ButtonRow>
+        </RightColumn>
       </Content>
     </Modal>
   );
