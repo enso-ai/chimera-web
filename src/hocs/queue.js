@@ -388,12 +388,21 @@ export const QueueProvider = ({ children }) => {
 
             try {
                 // First, get the asset details to check duration and get the title
+                // [todo] use the asset that's pulled down so no need to pull again
                 const assetDetails = await getAssetDetails(assetId);
                 
                 // Then, fetch creator information
                 setIsCreatorInfoLoading(true);
                 setCreatorInfoError(null);
                 const creatorInfoData = await getCreatorPostingInfo(channelId);
+
+                if (creatorInfoData?.privacy_level_options.includes('PUBLIC_TO_EVERYONE')) {
+                    // only public account has option 'PUBLIC_TO_EVERYONE'
+                    creatorInfoData.type = 'PUBLIC';
+                } else {
+                    // private account has option 'FOLLOWER_OF_CREATOR'
+                    creatorInfoData.type = 'PRIVATE';
+                }
                 setCreatorInfo(creatorInfoData);
                 
                 // Set the active asset and open the dialog
