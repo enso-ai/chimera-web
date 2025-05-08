@@ -35,6 +35,8 @@ const parsePrivacyLevel = (level) => {
       return 'Followers';
     case 'SELF_ONLY':
       return 'Private';
+    case undefined:
+      return '-';
     default:
       return level; // Fallback to display actual value if unknown
   }
@@ -299,9 +301,7 @@ const PrePostingDialog = ({
   onPlayVideo,
 }) => {
   // State for configurable settings
-  const [privacyLevel, setPrivacyLevel] = useState(
-    creatorInfo?.privacy_level_options?.[0] || 'SELF_ONLY'
-  );
+  const [privacyLevel, setPrivacyLevel] = useState(undefined);
   const [commentDisabled, setCommentDisabled] = useState(creatorInfo?.comment_disabled || false);
   const [duetDisabled, setDuetDisabled] = useState(creatorInfo?.duet_disabled || false);
   const [stitchDisabled, setStitchDisabled] = useState(creatorInfo?.stitch_disabled || false);
@@ -336,6 +336,8 @@ const PrePostingDialog = ({
   // Determine if video duration exceeds maximum
   const durationExceeded = asset?.duration && creatorInfo?.max_video_post_duration_sec &&
                           asset.duration > creatorInfo.max_video_post_duration_sec;
+
+  const sendButtonDisabled = durationExceeded || !privacyLevel;
 
   // Generate compliance text based on brand settings
   const getComplianceText = () => {
@@ -525,7 +527,7 @@ const PrePostingDialog = ({
                   // For simplicity here, we'll parse on change and handle non-numeric input
                   const numValue = parseInt(value, 10);
                   if (!isNaN(numValue) || value === '') {
-                     setVideoCoverTimestampMs(value === '' ? 0 : numValue);
+                    setVideoCoverTimestampMs(value === '' ? 0 : numValue);
                   }
                 }}
                 placeholder="0"
@@ -598,7 +600,7 @@ const PrePostingDialog = ({
           <Button
             color={ButtonColors.PRIMARY}
             onClick={handleConfirm}
-            disabled={durationExceeded}
+            disabled={sendButtonDisabled}
           >
             Post to TikTok
           </Button>
