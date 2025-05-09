@@ -9,6 +9,7 @@ import {
 } from 'constants';
 import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
 import Switch from './PostSettings/Switch';
+import { useAlerts, ALERT_ERROR } from 'hocs/alert';
 
 // Define colors for the toggle switches
 const TOGGLE_ACTIVE_COLOR = ButtonColors.POSITIVE;
@@ -349,6 +350,9 @@ const PrePostingDialog = ({
   const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = useState(false);
   const privacySelectRef = useRef(null);
 
+  // alert context
+  const { addAlert } = useAlerts();
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -423,6 +427,7 @@ const PrePostingDialog = ({
     // Prevent posting if duration exceeds maximum
     if (durationExceeded) {
       alert('Video duration exceeds the maximum allowed for your TikTok account.');
+      addAlert(ALERT_ERROR, 'Video duration exceeds the maximum allowed for your TikTok account.');
       return;
     }
 

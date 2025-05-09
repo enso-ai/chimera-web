@@ -1,19 +1,22 @@
+import styled from "styled-components";
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router";
+
 import { AuthProvider } from "hocs/auth";
 import { NotificationProvider } from "hocs/notification";
 import { ChannelProvider } from "hocs/channel";
 import { QueueProvider } from "hocs/queue";
+import { AlertProvider } from "hocs/alert";
 
-import styled from "styled-components";
 import Header from "components/Header";
 
+import { PageNames } from "constants";
 import { tabList } from "Tabs";
 import TiktokCallback from "pages/TiktokCallback";
 import TermsOfService from "pages/TermsOfService";
 import PrivacyPolicy from "pages/PrivacyPolicy";
 import Signin from "pages/SignIn";
 import Footer from "components/Footer";
-import { PageNames } from "constants";
+import { AlertList } from "components/Alert";
 
 const LayoutContainer = styled.div`
     width: 100vw;
@@ -46,21 +49,24 @@ const MainContainer = styled.div`
 
 const Layout = () => {
     return (
-        <AuthProvider>
-            <NotificationProvider>
-                <ChannelProvider>
-                    <QueueProvider>
-                        <LayoutContainer>
-                            <Header />
-                            <MainContainer>
-                                <Outlet />
-                            </MainContainer>
-                            <Footer />
-                        </LayoutContainer>
-                    </QueueProvider>
-                </ChannelProvider>
-            </NotificationProvider>
-        </AuthProvider>
+        <AlertProvider>
+            <AuthProvider>
+                <NotificationProvider>
+                    <ChannelProvider>
+                        <QueueProvider>
+                            <LayoutContainer>
+                                <Header />
+                                <MainContainer>
+                                    <Outlet />
+                                </MainContainer>
+                                <Footer />
+                                <AlertList />
+                            </LayoutContainer>
+                        </QueueProvider>
+                    </ChannelProvider>
+                </NotificationProvider>
+            </AuthProvider>
+        </AlertProvider>
     );
 };
 
