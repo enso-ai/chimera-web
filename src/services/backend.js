@@ -164,7 +164,8 @@ export const getCreatorPostingInfo = async (channelId) => {
         const response = await api.get(`channels/${channelId}/creator_posting_info`);
         return response.data;
     } catch (error) {
-        if (error.response?.status === 409) {
+        if (error.response?.status === 406) {
+            console.error("Tiktok rejected the posting request:", error);
             // TikTok rejected the posting request - throw specific error
             const message = error.response.data?.message || 'TikTok has rejected this posting request';
             throw new TikTokPostRejectionError(message, error.response.data);
