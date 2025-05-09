@@ -368,7 +368,7 @@ const PrePostingDialog = ({
 
   useEffect(() => {
     try {
-      if (brandContentEnabled && brandContentToggleRef.current == false) {
+      if (!brandContentToggleRef.current !== brandContentEnabled && brandContentEnabled) {
         // brand content toggle was just enabled
         if (privacyLevel === 'SELF_ONLY') {
           // privacy level is SELF_ONLY, set to PUBLIC_TO_EVERYONE
@@ -392,7 +392,7 @@ const PrePostingDialog = ({
       brandContentToggleRef.current = brandContentEnabled;
       privacyLevelRef.current = privacyLevel;
     }
-  }, [privacyLevel, brandContentEnabled])
+  }, [privacyLevel, brandContentEnabled, creatorInfo.type]);
 
 
   // Determine if video duration exceeds maximum

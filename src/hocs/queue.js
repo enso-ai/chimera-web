@@ -346,7 +346,7 @@ export const QueueProvider = ({ children }) => {
                 }
             });
         }
-    }, [assetUpdatedTs, dispatch]);
+    }, [assetUpdatedTs, assetUpdateQueueRef, dispatch]);
 
     // --- Action Handlers ---
 
@@ -378,7 +378,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress]
+        [state.queues, isActionInProgress, addAlert]
     );
 
     const handlePostNow = useCallback(
@@ -423,7 +423,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress]
+        [isActionInProgress, addAlert]
     );
     
     // New function to handle confirmation from dialog
@@ -457,7 +457,7 @@ export const QueueProvider = ({ children }) => {
             setActiveAssetForPosting(null);
             dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
         }
-    }, [activeAssetForPosting, state.queues]);
+    }, [activeAssetForPosting, state.queues, addAlert]);
 
     const handleDeleteAsset = useCallback(
         async (channelId, assetId) => {
@@ -503,7 +503,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [state.queues, isActionInProgress]
+        [state.queues, isActionInProgress, addAlert]
     );
 
     const handleReprocessAsset = useCallback(
@@ -535,7 +535,7 @@ export const QueueProvider = ({ children }) => {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
         },
-        [isActionInProgress]
+        [isActionInProgress, addAlert]
     );
 
     const value = {
