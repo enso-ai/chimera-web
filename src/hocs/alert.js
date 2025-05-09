@@ -19,7 +19,7 @@ export const AlertProvider = ({ children }) => {
         setAlerts((prevAlerts) => [...prevAlerts, { severity, message, id }]);
         setTimeout(() => {
             removeAlert(id);
-        }, 3000); // Remove alert after 3 seconds
+        }, 5000); // Remove alert after 5 seconds
     }
 
     const removeAlert = (id) => {
