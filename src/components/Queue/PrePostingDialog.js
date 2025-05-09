@@ -241,6 +241,8 @@ const CustomSelectDisplay = styled.div`
     outline: none;
     border-bottom: 2px solid #2196f3; /* Material blue focus */
   }
+
+  user-select: none;
 `;
 
 const CustomSelectDropdown = styled.ul`
@@ -261,15 +263,35 @@ const CustomSelectDropdown = styled.ul`
   box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Material shadow */
 `;
 
-const CustomSelectOption = styled.li`
+const CustomSelectOptionContainer = styled.div`
+  position: relative;
+
+  &.has-tooltip:hover::after {
+    visibility: visible;
+    content: "Brand content can't be private";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+  }
+`
+
+const CustomSelectOption = styled.option`
   padding: 8px 12px;
   cursor: pointer;
   &:hover {
     background-color: #eee;
   }
+  &:disabled {
+    color: #aaa;
+  }
   &.selected {
     background-color: #e0e0e0; /* Slightly different for selected */
   }
+  user-select: none;
 `;
 
 const StyledMaterialInput = styled.input`
@@ -502,16 +524,22 @@ const PrePostingDialog = ({
                 {isPrivacyDropdownOpen && (
                   <CustomSelectDropdown>
                     {creatorInfo.privacy_level_options.map(option => (
-                      <CustomSelectOption
+                      <CustomSelectOptionContainer
                         key={option}
-                        className={privacyLevel === option ? 'selected' : ''}
-                        onClick={() => {
-                          setPrivacyLevel(option);
-                          setIsPrivacyDropdownOpen(false);
-                        }}
+                        className={option === 'SELF_ONLY' && brandContentEnabled ? 'has-tooltip' : ''}
                       >
-                        {parsePrivacyLevel(option)}
-                      </CustomSelectOption>
+                        <CustomSelectOption
+                          key={option}
+                          className={privacyLevel === option ? 'selected' : ''}
+                          onClick={() => {
+                            setPrivacyLevel(option);
+                            setIsPrivacyDropdownOpen(false);
+                          }}
+                          disabled={option === 'SELF_ONLY' && brandContentEnabled}
+                        >
+                          {parsePrivacyLevel(option)}
+                        </CustomSelectOption>
+                      </CustomSelectOptionContainer>
                     ))}
                   </CustomSelectDropdown>
                 )}
