@@ -1,5 +1,23 @@
 import api from './api';
 
+// Custom error class for TikTok post rejections
+class TikTokPostRejectionError extends Error {
+    constructor(message, details = {}) {
+        super(message);
+        this.name = 'TikTokPostRejectionError';
+        this.details = details;
+        
+        // Maintain proper stack traces for where our error was thrown (only in V8)
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, TikTokPostRejectionError);
+        }
+    }
+}
+
+// Make the error class available for import
+export { TikTokPostRejectionError };
+
+
 // Authentication functions
 export const login = async (username, password) => {
     const response = await api.post('auth/login', { username, password });
@@ -141,8 +159,24 @@ export const updateAsset = async (objectKey, payload) => {
     return response.data;
 };
 
-export const postAsset = async (fileId) => {
-    const response = await api.post(`assets/${fileId}/post`);
+export const getCreatorPostingInfo = async (channelId) => {
+    try {
+        const response = await api.get(`channels/${channelId}/creator_posting_info`);
+        return response.data;
+    } catch (error) {
+        if (error.response?.status === 409) {
+            // TikTok rejected the posting request - throw specific error
+            const message = error.response.data?.message || 'TikTok has rejected this posting request';
+            throw new TikTokPostRejectionError(message, error.response.data);
+        }
+        // For all other error cases, just re-throw the original error
+        console.error('Error fetching creator posting info:', error);
+        throw error;
+    }
+};
+
+export const postAsset = async (fileId, postSettings = {}) => {
+    const response = await api.post(`assets/${fileId}/post`, postSettings);
     return response.data;
 };
 

@@ -32,3 +32,8 @@ export const ButtonColors = {
   POSITIVE: '#4CAF50', // Green - Positive actions
   NEGATIVE: '#dc3545', // Red - Negative actions
 };
+
+export const TT_MUSIC_CMP_URL =
+  "https://www.tiktok.com/legal/page/global/music-usage-confirmation/en"
+export const TT_BC_CMP_URL =
+  "https://www.tiktok.com/legal/page/global/bc-policy/en"
