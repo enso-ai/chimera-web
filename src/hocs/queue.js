@@ -23,6 +23,7 @@ import {
     LOCKED_STATES
 } from 'constants/assetStatus';
 import { useNotification } from './notification';
+import { useAlerts, ALERT_SUCCESS, ALERT_ERROR } from 'hocs/alert';
 
 const QueueContext = createContext();
 
@@ -196,6 +197,7 @@ export const QueueProvider = ({ children }) => {
     const [state, dispatch] = useReducer(queueReducer, initialState);
     const activeFetches = useRef(new Set()); // Track active full fetches per channel
     const { assetUpdateQueueRef, assetUpdatedTs } = useNotification();
+    const { addAlert } = useAlerts();
     
     // State for creator info dialog
     const [creatorInfoDialogOpen, setCreatorInfoDialogOpen] = useState(false);
@@ -364,7 +366,7 @@ export const QueueProvider = ({ children }) => {
                 // Success - state already updated optimistically
             } catch (error) {
                 console.error('Failed to update title:', error);
-                alert('Failed to update title. Please try again.');
+                addAlert(ALERT_ERROR, 'Failed to update title. Please try again.');
                 // Revert optimistic update on error
                 if (originalAsset) {
                     dispatch({
@@ -415,7 +417,7 @@ export const QueueProvider = ({ children }) => {
             } catch (error) {
                 console.error('Failed to fetch creator info:', error);
                 setCreatorInfoError(error.message || 'Failed to fetch creator information');
-                alert('Failed to fetch creator information. Please try again.');
+                addAlert(ALERT_ERROR, 'Failed to fetch creator information. Please try again.');
             } finally {
                 setIsCreatorInfoLoading(false);
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
@@ -437,7 +439,7 @@ export const QueueProvider = ({ children }) => {
         try {
             // Pass the settings to the post API
             await postAsset(assetId, postSettings);
-            alert("Video posted successfully, it may take a few minutes to process and be visible on your profile.");
+            addAlert(ALERT_SUCCESS, 'Video posted successfully!, it may take a few minutes to process and be visible on your profile.');
             
             // Update status to posting
             dispatch({
@@ -464,7 +466,7 @@ export const QueueProvider = ({ children }) => {
 
             const asset = state.queues[channelId]?.assets.find((a) => a.id === assetId);
             if (LOCKED_STATES.includes(asset?.status)) {
-                alert('Cannot delete video while it is being posted or deleted.');
+                addAlert(ALERT_ERROR, 'Cannot delete video while it is being posted or deleted.');
                 return;
             }
 
@@ -489,7 +491,7 @@ export const QueueProvider = ({ children }) => {
                 // The asset will be removed when we receive a deletion notification
             } catch (error) {
                 console.error('Failed to delete asset:', error);
-                alert('Failed to delete video. Please try again.');
+                addAlert(ALERT_ERROR, 'Failed to delete video. Please try again.');
                 // Revert status change on error
                 if (originalAsset) {
                     dispatch({
@@ -528,7 +530,7 @@ export const QueueProvider = ({ children }) => {
                 });
             } catch (error) {
                 console.error('Failed to reprocess asset:', error);
-                alert('Failed to reprocess video. Please try again.');
+                addAlert(ALERT_ERROR, 'Failed to reprocess video. Please try again.');
             } finally {
                 dispatch({ type: actionTypes.ACTION_END, payload: { actionKey } });
             }
