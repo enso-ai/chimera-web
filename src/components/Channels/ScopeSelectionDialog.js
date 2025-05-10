@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import styled from 'styled-components';
-import Modal from 'components/Modal';
-import { Button, ConfirmButton, CancelButton } from 'components/Button';
-import { redirectToTiktokSignin } from 'utils/tiktok';
+import { useState } from "react";
+import styled from "styled-components";
+import Modal from "components/Modal";
+import { ConfirmButton, CancelButton } from "components/Button";
+import Switch from "components/Queue/PostSettings/Switch"; // Updated import
+import { redirectToTiktokSignin } from "utils/tiktok";
 
 const DialogContent = styled.div`
   display: flex;
@@ -20,16 +21,18 @@ const Title = styled.h2`
   color: #333;
 `;
 
-const Description = styled.p`
-  margin: 0;
-  color: #666;
-  line-height: 1.5;
+// New styled components for the single row layout
+const PermissionRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
 `;
 
-const OptionContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+const PermissionLabel = styled.div`
+  font-size: 16px;
+  color: #444;
+  margin-right: 15px; /* Add some space between label and switch */
 `;
 
 const ButtonsContainer = styled.div`
@@ -37,6 +40,8 @@ const ButtonsContainer = styled.div`
   justify-content: flex-end;
   gap: 10px;
   margin-top: 10px;
+  border-top: 1px solid #eee; /* Optional: visual separator */
+  padding-top: 15px; /* Optional: spacing for separator */
 `;
 
 export default function ScopeSelectionDialog({ onClose }) {
@@ -51,33 +56,23 @@ export default function ScopeSelectionDialog({ onClose }) {
     <Modal onClose={onClose}>
       <DialogContent>
         <Title>TikTok Account Permissions</Title>
-        <Description>
-          Choose what permissions to grant when connecting your TikTok account:
-        </Description>
-
-        <OptionContainer>
-          <Button
-            onClick={() => setIncludePublishing(false)}
-            variant={!includePublishing ? 'primary' : 'secondary'}
-          >
-            View Only - Can view channel stats and video list
-          </Button>
-
-          <Button
-            onClick={() => setIncludePublishing(true)}
-            variant={includePublishing ? 'primary' : 'secondary'}
-          >
-            View & Post - Can view channel stats and publish videos
-          </Button>
-        </OptionContainer>
-
+        
+        {/* Updated UI with Switch */}
+        <PermissionRow>
+          <PermissionLabel>
+            Allow Chimera to publish videos to this TikTok account?
+          </PermissionLabel>
+          <Switch 
+            toggled={includePublishing}
+            onChange={setIncludePublishing}
+            activeColor="#1DA1F2" // Example active color (Twitter blue)
+            inactiveColor="#ccc"    // Example inactive color
+          />
+        </PermissionRow>
+        
         <ButtonsContainer>
-          <CancelButton onClick={onClose}>
-            Cancel
-          </CancelButton>
-          <ConfirmButton onClick={handleConfirm}>
-            Connect Account
-          </ConfirmButton>
+          <CancelButton onClick={onClose}>Cancel</CancelButton>
+          <ConfirmButton onClick={handleConfirm}>Connect Account</ConfirmButton>
         </ButtonsContainer>
       </DialogContent>
     </Modal>
