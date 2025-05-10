@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from 'components/Button';
 import styled from 'styled-components';
-
-import { redirectToTiktokSignin } from 'utils/tiktok';
+import ScopeSelectionDialog from 'components/Channels/ScopeSelectionDialog'; // Added import
 
 // Custom hook for debounced value
 function useDebounce(value, delay) {
@@ -137,11 +136,12 @@ export default function ChannelList({
     channels,
     onSelectChannel,
     highlightedChannel,
-    showAddButton = true,
-    addButtonAction = redirectToTiktokSignin
+    showAddButton = true
+    // Removed addButtonAction prop
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300); // 300ms delay
+    const [showScopeDialog, setShowScopeDialog] = useState(false); // Added state for dialog
 
     // Filter channels based on debounced search query
     const filteredChannels = channels.filter(channel =>
@@ -189,10 +189,14 @@ export default function ChannelList({
 
             {showAddButton && (
                 <ButtonContainer>
-                    <Button onClick={addButtonAction} fontSize="1.4em">
+                    <Button onClick={() => setShowScopeDialog(true)} fontSize="1.4em">
                         Add Channel
                     </Button>
                 </ButtonContainer>
+            )}
+
+            {showScopeDialog && (
+                <ScopeSelectionDialog onClose={() => setShowScopeDialog(false)} />
             )}
         </Container>
     );
