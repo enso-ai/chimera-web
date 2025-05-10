@@ -46,8 +46,19 @@ export const ChannelProvider = ({ children }) => {
                     console.log(
                         `Received ${response.data.length} channels from page ${currentPage}`
                     );
+                    // Process each channel to determine allowPost
+                    const processedChannels = response.data.map(channel => {
+                      // Set allowPost based on scope field
+                      // Default to true if scope is missing or doesn't include 'video.publish'
+                      const hasPublishScope = channel.scope && channel.scope.includes('video.publish');
+                      return {
+                        ...channel,
+                        allowPost: !hasPublishScope // Set to false if 'video.publish' is in scope
+                      };
+                    });
+
                     // Append new channels to existing ones
-                    setChannels((prevChannels) => [...prevChannels, ...response.data]);
+                    setChannels((prevChannels) => [...prevChannels, ...processedChannels]);
 
                     // Check if there are more pages
                     hasNext = response.has_next;

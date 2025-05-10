@@ -24,6 +24,7 @@ import {
 } from 'constants/assetStatus';
 import { useNotification } from './notification';
 import { useAlerts, ALERT_SUCCESS, ALERT_ERROR } from 'hocs/alert';
+import { useChannel } from './channel';
 
 const QueueContext = createContext();
 
@@ -569,6 +570,8 @@ export const useQueue = (channelId) => {
     if (context === undefined) {
         throw new Error('useQueue must be used within a QueueProvider');
     }
+    const { channels } = useChannel();
+    const allowPost = channels.find((channel) => channel.id === channelId)?.allow_post;
 
     const queueState = context.getQueueState(channelId);
 
@@ -606,6 +609,7 @@ export const useQueue = (channelId) => {
         deleteAsset: (assetId) => context.handleDeleteAsset(channelId, assetId),
         reprocessAsset: (assetId) => context.handleReprocessAsset(channelId, assetId),
         isActionInProgress: context.isActionInProgress, // Pass this through
+        allowPost, // Pass allowPost
         // Creator info dialog related
         creatorInfoDialogOpen: context.creatorInfoDialogOpen,
         activeAssetForPosting: context.activeAssetForPosting,
