@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from 'components/Button';
 import styled from 'styled-components';
 import ScopeSelectionDialog from 'components/Channels/ScopeSelectionDialog'; // Added import
+import { BsFillSendXFill } from "react-icons/bs"; // Add this import
 
 // Custom hook for debounced value
 function useDebounce(value, delay) {
@@ -117,6 +118,14 @@ const ChannelLabel = styled.p`
     user-select: none; /* Standard */
 `;
 
+// New styled component for the icon
+const NoPostIcon = styled(BsFillSendXFill)`
+    color: #DC3545; // Red color for restriction
+    margin-left: 8px;
+    margin-top: 5px;
+    font-size: 16px;
+`;
+
 const ButtonContainer = styled.div`
     width: 100%;
     display: flex;
@@ -178,6 +187,7 @@ export default function ChannelList({
                             selected={highlightedChannel?.id === channel.id}
                         >
                             <ChannelLabel>{channel.display_name}</ChannelLabel>
+                            {!channel.allowPost && <NoPostIcon title="Posting not allowed for this channel" />}
                         </ChannelContainer>
                     ))
                 ) : (
