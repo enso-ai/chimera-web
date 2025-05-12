@@ -62,7 +62,7 @@ const Content = styled.div`
     "leftCol rightCol"
     "compliance compliance"
     "buttons buttons";
-  gap: 24px; // Keep existing gap
+  gap: 24px;
 `;
 
 const LeftColumn = styled.div`
@@ -198,7 +198,7 @@ const ComplianceText = styled.div`
   color: #666;
   margin: 16px 0;
   line-height: 1.5;
-  grid-area: compliance; /* Added grid-area */
+  grid-area: compliance;
   text-align: center;
 
   a {
@@ -216,20 +216,20 @@ const ButtonRow = styled.div`
   justify-content: flex-end;
   gap: 12px;
   margin-top: 20px;
-  grid-area: buttons; /* Added grid-area */
+  grid-area: buttons;
 `;
 
 // Custom styled components for Material Design inputs
 const CustomSelectWrapper = styled.div`
   position: relative;
-  width: 200px; /* Or adjust as needed */
-  font-family: 'Roboto', sans-serif; /* Assuming Material Design font */
+  width: 200px;
+  font-family: 'Roboto', sans-serif;
 `;
 
 const CustomSelectDisplay = styled.div`
   padding: 8px 12px;
   border: none;
-  border-bottom: 1px solid #ccc; /* Material-like bottom border */
+  border-bottom: 1px solid #ccc;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -240,7 +240,7 @@ const CustomSelectDisplay = styled.div`
   &:focus,
   &:focus-within {
     outline: none;
-    border-bottom: 2px solid #2196f3; /* Material blue focus */
+    border-bottom: 2px solid #2196f3;
   }
 
   user-select: none;
@@ -261,7 +261,7 @@ const CustomSelectDropdown = styled.ul`
   z-index: 10;
   max-height: 200px;
   overflow-y: auto;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Material shadow */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 `;
 
 const CustomSelectOptionContainer = styled.div`
@@ -269,7 +269,7 @@ const CustomSelectOptionContainer = styled.div`
 
   &.has-tooltip:hover::after {
     visibility: visible;
-    content: "Brand content can't be private";
+    content: "Branded content can't be private";
     position: absolute;
     bottom: 0;
     left: 0;
@@ -290,14 +290,14 @@ const CustomSelectOption = styled.option`
     color: #aaa;
   }
   &.selected {
-    background-color: #e0e0e0; /* Slightly different for selected */
+    background-color: #e0e0e0;
   }
   user-select: none;
 `;
 
 const StyledMaterialInput = styled.input`
-  width: 200px; /* Or adjust */
-  padding: 8px 0; /* Padding for text, no side padding for underline effect */
+  width: 200px;
+  padding: 8px 0;
   padding-right: 3px;
   border: none;
   border-bottom: 1px solid #ccc;
@@ -309,7 +309,7 @@ const StyledMaterialInput = styled.input`
 
   &:focus {
     outline: none;
-    border-bottom: 2px solid #2196f3; /* Material blue focus */
+    border-bottom: 2px solid #2196f3;
   }
   &::placeholder {
     color: #aaa;
@@ -343,7 +343,7 @@ const PrePostingDialog = ({
   const [isAigc, setIsAigc] = useState(false);
 
   // Ref for tracking brand content toggle and privacy level changes
-  const brandContentToggleRef = useRef(null);
+  const brandedContentToggleRef = useRef(null);
   const privacyLevelRef = useRef(null);
 
   // State for custom select dropdown
@@ -368,7 +368,7 @@ const PrePostingDialog = ({
 
   useEffect(() => {
     try {
-      if (!brandContentToggleRef.current !== brandContentEnabled && brandContentEnabled) {
+      if (brandedContentToggleRef.current !== brandedContentEnabled && brandedContentEnabled) {
         // brand content toggle was just enabled
         if (privacyLevel === 'SELF_ONLY') {
           // privacy level is SELF_ONLY, set to PUBLIC_TO_EVERYONE
@@ -382,17 +382,17 @@ const PrePostingDialog = ({
         }
       } else if (privacyLevel !== privacyLevelRef.current && privacyLevel === 'SELF_ONLY') {
         // privacy level was just changed to private, check brand content toggle
-        if (brandContentEnabled) {
+        if (brandedContentEnabled) {
           // for private content, the brand content toggle should be disabled
           setBrandContentEnabled(false);
         }
       }
 
     } finally {
-      brandContentToggleRef.current = brandContentEnabled;
+      brandedContentToggleRef.current = brandedContentEnabled;
       privacyLevelRef.current = privacyLevel;
     }
-  }, [privacyLevel, brandContentEnabled, creatorInfo.type]);
+  }, [privacyLevel, brandedContentEnabled, creatorInfo.type]);
 
 
   // Determine if video duration exceeds maximum
@@ -531,7 +531,7 @@ const PrePostingDialog = ({
                     {creatorInfo.privacy_level_options.map(option => (
                       <CustomSelectOptionContainer
                         key={option}
-                        className={option === 'SELF_ONLY' && brandContentEnabled ? 'has-tooltip' : ''}
+                        className={option === 'SELF_ONLY' && brandedContentEnabled ? 'has-tooltip' : ''}
                       >
                         <CustomSelectOption
                           key={option}
@@ -540,7 +540,7 @@ const PrePostingDialog = ({
                             setPrivacyLevel(option);
                             setIsPrivacyDropdownOpen(false);
                           }}
-                          disabled={option === 'SELF_ONLY' && brandContentEnabled}
+                          disabled={option === 'SELF_ONLY' && brandedContentEnabled}
                         >
                           {parsePrivacyLevel(option)}
                         </CustomSelectOption>
