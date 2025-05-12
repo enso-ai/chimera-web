@@ -162,7 +162,8 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
         postNow,
         deleteAsset,
         reprocessAsset,
-        isActionInProgress, // Get action status checker
+        allowPost,
+        isActionInProgress,
     } = useQueue(channelId); // Use the hook with the passed channelId
 
     const [isEditing, setIsEditing] = useState(false); // Manage editing state locally
@@ -289,9 +290,11 @@ const FileAsset = ({ asset, channelId, onThumbnailClick }) => {
                     color={ButtonColors.PRIMARY}
                     onClick={() => postNow(asset.id)}
                     disabled={
-                        asset.status !== ASSET_STATUS.PROCESSED || isActionInProgress(postActionKey)
+                        asset.status !== ASSET_STATUS.PROCESSED ||
+                        isActionInProgress(postActionKey) ||
+                        !allowPost // Disable if allowPost is false
                     }
-                    title='Post Now'
+                    title={!allowPost ? 'Posting not allowed for this channel' : 'Post Now'} // Add tooltip based on allowPost
                 >
                     {isActionInProgress(postActionKey) ? '...' : <FiSend size={18} />}
                 </IconButton>

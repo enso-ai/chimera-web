@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from 'components/Button';
 import styled from 'styled-components';
-
-import { redirectToTiktokSignin } from 'utils/tiktok';
+import ScopeSelectionDialog from 'components/Channels/ScopeSelectionDialog'; // Added import
+import { BsFillSendXFill } from "react-icons/bs"; // Add this import
 
 // Custom hook for debounced value
 function useDebounce(value, delay) {
@@ -118,6 +118,14 @@ const ChannelLabel = styled.p`
     user-select: none; /* Standard */
 `;
 
+// New styled component for the icon
+const NoPostIcon = styled(BsFillSendXFill)`
+    color: #DC3545; // Red color for restriction
+    margin-left: 8px;
+    margin-top: 5px;
+    font-size: 16px;
+`;
+
 const ButtonContainer = styled.div`
     width: 100%;
     display: flex;
@@ -137,11 +145,12 @@ export default function ChannelList({
     channels,
     onSelectChannel,
     highlightedChannel,
-    showAddButton = true,
-    addButtonAction = redirectToTiktokSignin
+    showAddButton = true
+    // Removed addButtonAction prop
 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300); // 300ms delay
+    const [showScopeDialog, setShowScopeDialog] = useState(false); // Added state for dialog
 
     // Filter channels based on debounced search query
     const filteredChannels = channels.filter(channel =>
@@ -178,6 +187,7 @@ export default function ChannelList({
                             selected={highlightedChannel?.id === channel.id}
                         >
                             <ChannelLabel>{channel.display_name}</ChannelLabel>
+                            {!channel.allowPost && <NoPostIcon title="Posting not allowed for this channel" />}
                         </ChannelContainer>
                     ))
                 ) : (
@@ -189,10 +199,14 @@ export default function ChannelList({
 
             {showAddButton && (
                 <ButtonContainer>
-                    <Button onClick={addButtonAction} fontSize="1.4em">
+                    <Button onClick={() => setShowScopeDialog(true)} fontSize="1.4em">
                         Add Channel
                     </Button>
                 </ButtonContainer>
+            )}
+
+            {showScopeDialog && (
+                <ScopeSelectionDialog onClose={() => setShowScopeDialog(false)} />
             )}
         </Container>
     );
