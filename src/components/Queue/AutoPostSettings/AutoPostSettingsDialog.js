@@ -280,7 +280,6 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
         alertTriggerThreshold,
         alertEmailDestination,
         onSave,
-        validateForm,
     ]);
 
     const PostingRules = (

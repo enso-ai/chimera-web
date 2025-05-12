@@ -164,12 +164,15 @@ const AssetsView = () => {
     }, []);
 
     // Handler for successful GCS ingestion start
-    const handleGCSIngestSuccess = useCallback((channel_id) => {
-        console.log('GCS ingestion job started successfully.');
-        // Queue refresh is handled within the dialog component
-        refreshQueue();
-        setShowGCSIngestDialog(false);
-    }, []);
+    const handleGCSIngestSuccess = useCallback(
+        (channel_id) => {
+            console.log('GCS ingestion job started successfully.');
+            // Queue refresh is handled within the dialog component
+            refreshQueue();
+            setShowGCSIngestDialog(false);
+        },
+        [refreshQueue]
+    );
 
     const handleToggle = useCallback(
         async (isEnabled) => {
@@ -206,7 +209,7 @@ const AssetsView = () => {
     };
 
     const notPostedCount = useMemo(
-        () => assets.filter((a) => !a.status == 'posted').length,
+        () => assets.filter((a) => !a.status === 'posted').length,
         [assets]
     );
 
