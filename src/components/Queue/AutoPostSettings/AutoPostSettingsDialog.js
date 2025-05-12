@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { styled } from 'styled-components';
 import { ConfirmButton, CancelButton } from 'components/Button';
 import Modal from 'components/Modal';
-import Switch from 'components/Queue/PostSettings/Switch';
+import Switch from 'components/Switch';
 import { convertUtcToPst, convertPstToUtc, roundTimeUpToNearest10Minutes } from 'utils/time';
 
 const MenuContainer = styled.div`
@@ -135,7 +135,7 @@ const HelperText = styled.p`
     justify-self: end;
 `;
 
-export default function PostSettingDialog({ settings, onClose, onSave }) {
+export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
     const [error, setError] = useState(null);
     // Initialize state from settings prop
     const [scheduleEnabled, setScheduleEnabled] = useState(settings?.schedule_enabled ?? false);

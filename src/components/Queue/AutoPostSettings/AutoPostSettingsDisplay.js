@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { FaBell, FaBellSlash } from 'react-icons/fa6';
 import { convertUtcToPst } from 'utils/time';
 
-import Switch from 'components/Queue/PostSettings/Switch';
+import Switch from 'components/Switch';
 
 const WidgetContainer = styled.div`
     display: flex;

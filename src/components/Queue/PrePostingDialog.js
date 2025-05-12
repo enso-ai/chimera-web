@@ -8,7 +8,7 @@ import {
   TT_BC_CMP_URL
 } from 'constants';
 import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
-import Switch from './PostSettings/Switch';
+import Switch from 'components/Switch';
 import { useAlerts, ALERT_ERROR } from 'hocs/alert';
 
 // Define colors for the toggle switches

@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled from "styled-components";
 import Modal from "components/Modal";
 import { ConfirmButton, CancelButton } from "components/Button";
-import Switch from "components/Queue/PostSettings/Switch"; // Updated import
+import Switch from "components/Switch"; // Updated import
 import { redirectToTiktokSignin } from "utils/tiktok";
 
 const DialogContent = styled.div`

@@ -5,8 +5,8 @@ import { useQueue } from 'hocs/queue';
 import { getChannelSchedule, updateChannelSchedule } from 'services/backend';
 import UploadDialog from 'components/Queue/UploadDialog';
 import ChannelQueueList from 'components/Queue/ChannelQueueList';
-import PostSettingDisplay from 'components/Queue/PostSettings/PostSettingsDisplay';
-import PostSettingDialog from 'components/Queue/PostSettings/PostSettingsDialog';
+import AutoPostSettingDisplay from 'components/Queue/AutoPostSettings/AutoPostSettingsDisplay';
+import AutoPostSettingDialog from 'components/Queue/AutoPostSettings/AutoPostSettingsDialog';
 import PlayerModal from 'components/Queue/PlayerModal';
 import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
 import PrePostingDialog from 'components/Queue/PrePostingDialog';
@@ -100,14 +100,14 @@ const AssetsView = () => {
     const [highlightedChannelSettings, setHighlightedChannelSettings] = useState(null);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [showGCSIngestDialog, setShowGCSIngestDialog] = useState(false); // State for the new dialog
-    const [showPostSettings, setShowPostSettings] = useState(false);
+    const [showAutoPostSettings, setShowAutoPostSettings] = useState(false);
     const [scheduleSettingLoading, setScheduleSettingLoading] = useState(false);
     const [playingAsset, setPlayingAsset] = useState(null);
 
-    const { 
-        assets, 
-        isLoading, 
-        error, 
+    const {
+        assets,
+        isLoading,
+        error,
         refreshQueue,
         creatorInfoDialogOpen,
         activeAssetForPosting,
@@ -115,7 +115,7 @@ const AssetsView = () => {
         isCreatorInfoLoading,
         creatorInfoError,
         handlePostConfirm,
-        closeCreatorInfoDialog
+        closeCreatorInfoDialog,
     } = useQueue(highlightedChannel?.id);
 
     useEffect(() => {
@@ -201,7 +201,7 @@ const AssetsView = () => {
             alert('Failed to update settings. Please try again.');
         } finally {
             setScheduleSettingLoading(false);
-            setShowPostSettings(false);
+            setShowAutoPostSettings(false);
         }
     };
 
@@ -227,10 +227,10 @@ const AssetsView = () => {
                             <FiRefreshCcw />
                         </RefreshButton>
                     </StatsContainer>
-                    <PostSettingDisplay
+                    <AutoPostSettingDisplay
                         settings={highlightedChannelSettings}
                         onToggle={handleToggle}
-                        onOpenSettings={() => setShowPostSettings(true)}
+                        onOpenSettings={() => setShowAutoPostSettings(true)}
                     />
                 </Header>
 
@@ -288,10 +288,10 @@ const AssetsView = () => {
                 />
             )}
 
-            {showPostSettings && (
-                <PostSettingDialog
+            {showAutoPostSettings && (
+                <AutoPostSettingDialog
                     settings={highlightedChannelSettings}
-                    onClose={() => setShowPostSettings(false)}
+                    onClose={() => setShowAutoPostSettings(false)}
                     onSave={handleSaveSettings}
                 />
             )}
@@ -314,7 +314,6 @@ const AssetsView = () => {
             {playingAsset && (
                 <PlayerModal playingAsset={playingAsset} onClose={() => setPlayingAsset(null)} />
             )}
-
         </Container>
     );
 };
