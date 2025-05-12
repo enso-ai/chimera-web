@@ -609,8 +609,8 @@ export const useQueue = (channelId) => {
         postNow: (assetId) => context.handlePostNow(channelId, assetId),
         deleteAsset: (assetId) => context.handleDeleteAsset(channelId, assetId),
         reprocessAsset: (assetId) => context.handleReprocessAsset(channelId, assetId),
-        isActionInProgress: context.isActionInProgress, // Pass this through
-        allowPost, // Pass allowPost
+        isActionInProgress: context.isActionInProgress,
+        allowPost,
         // Creator info dialog related
         creatorInfoDialogOpen: context.creatorInfoDialogOpen,
         activeAssetForPosting: context.activeAssetForPosting,
