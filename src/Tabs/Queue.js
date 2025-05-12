@@ -9,7 +9,7 @@ import AutoPostSettingDisplay from 'components/Queue/AutoPostSettings/AutoPostSe
 import AutoPostSettingDialog from 'components/Queue/AutoPostSettings/AutoPostSettingsDialog';
 import PlayerModal from 'components/Queue/PlayerModal';
 import GCSIngestDialog from 'components/Queue/GCSIngestDialog';
-import PrePostingDialog from 'components/Queue/PrePostingDialog';
+import PostingDialog from 'components/Queue/PostingDialog/PostingDialog';
 import { Button } from 'components/Button';
 import { ButtonColors } from 'constants';
 import ChannelList from 'components/ChannelList';
@@ -300,7 +300,7 @@ const AssetsView = () => {
             )}
 
             {creatorInfoDialogOpen && activeAssetForPosting && (
-                <PrePostingDialog
+                <PostingDialog
                     creatorInfo={creatorInfo}
                     asset={activeAssetForPosting}
                     channelId={highlightedChannel?.id}
