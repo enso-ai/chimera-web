@@ -571,7 +571,8 @@ export const useQueue = (channelId) => {
         throw new Error('useQueue must be used within a QueueProvider');
     }
     const { channels } = useChannel();
-    const allowPost = channels.find((channel) => channel.id === channelId)?.allow_post;
+    const currentChannel = channels.find((channel) => channel.id === channelId);
+    const allowPost = currentChannel?.allowPost;
 
     const queueState = context.getQueueState(channelId);
 
