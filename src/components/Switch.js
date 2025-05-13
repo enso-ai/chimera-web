@@ -8,14 +8,20 @@ const SwitchLabel = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    cursor: pointer;
+    cursor: ${(props) => (props.$disabled ? 'not-allowed' : 'pointer')};
     width: 45px;
     height: 20px;
     border-radius: 20px;
     border: 2px solid gray;
     position: relative;
-    transition: background-color 0.2s;
-    background-color: ${(props) => (props.$toggled ? props.$activeColor : props.$inactiveColor)};
+    transition: background-color 0.2s, opacity 0.2s;
+    background-color: ${(props) =>
+        props.$disabled
+            ? '#ccc' // Disabled color
+            : props.$toggled
+            ? props.$activeColor
+            : props.$inactiveColor};
+    opacity: ${(props) => (props.$disabled ? 0.6 : 1)};
 `;
 
 const SwitchButton = styled.span`
@@ -25,27 +31,34 @@ const SwitchButton = styled.span`
     width: 16px;
     height: 16px;
     border-radius: 8px;
-    transition: left 0.2s ease-in-out;
-    background: #fff;
+    transition: left 0.2s ease-in-out, background-color 0.2s;
+    background: ${(props) => (props.$disabled ? '#eee' : '#fff')};
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 
 
     ${SwitchLabel}:active & {
-        width: 15px;
+        width: ${(props) => (props.$disabled ? '16px' : '15px')}; // Prevent active shrink when disabled
     }
 `;
 
-export default function Switch({ toggled, onChange, activeColor, inactiveColor }) {
+export default function Switch({ toggled, onChange, activeColor, inactiveColor, disabled = false }) {
+    const handleClick = () => {
+        if (!disabled) {
+            onChange(!toggled);
+        }
+    };
+
     return (
         <SwitchContainer>
             <SwitchLabel
                 className='switch-label'
-                onClick={() => onChange(!toggled)}
+                onClick={handleClick}
                 $toggled={toggled}
                 $activeColor={activeColor}
                 $inactiveColor={inactiveColor}
+                $disabled={disabled}
             >
-                <SwitchButton className='switch-button' $toggled={toggled} />
+                <SwitchButton className='switch-button' $toggled={toggled} $disabled={disabled} />
             </SwitchLabel>
         </SwitchContainer>
     );

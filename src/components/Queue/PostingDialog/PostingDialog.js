@@ -5,7 +5,8 @@ import { Button } from 'components/Button';
 import { ButtonColors, TT_MUSIC_CMP_URL, TT_BC_CMP_URL } from 'constants';
 import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
 import Switch from 'components/Switch';
-import { useAlerts, ALERT_ERROR } from 'hocs/alert';
+import { useAlerts, ALERT_ERROR, ALERT_WARNING } from 'hocs/alert';
+import CommercialContentPrompt from './CommercialContentPrompt';
 
 // Define colors for the toggle switches
 const TOGGLE_ACTIVE_COLOR = ButtonColors.POSITIVE;
@@ -267,7 +268,7 @@ const CustomSelectOptionContainer = styled.div`
 
     &.has-tooltip:hover::after {
         visibility: visible;
-        content: "Brand content can't be private";
+        content: "branded content can't be private";
         position: absolute;
         bottom: 0;
         left: 0;
@@ -313,6 +314,21 @@ const StyledMaterialInput = styled.input`
     }
 `;
 
+// content: '{{props.$disabledReason}}';
+const SendButton = styled(Button)`
+    &.show-disable-reason:hover::after {
+        visibility: visible;
+        content: '${(props) => props.$disabledReason}';
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px;
+        border-radius: 4px;
+    }
+`;
+
 const PrePostingDialog = ({
     creatorInfo,
     asset,
@@ -324,6 +340,7 @@ const PrePostingDialog = ({
     onPlayVideo,
 }) => {
     // State for configurable settings
+    console.log('creatorInfo', creatorInfo);
     const [privacyLevel, setPrivacyLevel] = useState(undefined);
     const [commentDisabled, setCommentDisabled] = useState(creatorInfo?.comment_disabled || false);
     const [duetDisabled, setDuetDisabled] = useState(creatorInfo?.duet_disabled || false);
@@ -333,14 +350,14 @@ const PrePostingDialog = ({
     const [videoCoverTimestampMs, setVideoCoverTimestampMs] = useState(0);
 
     // Brand content settings with hierarchy
-    const [brandContentEnabled, setBrandContentEnabled] = useState(false);
+    const [commercialContentEnabled, setCommercialContentEnabled] = useState(false);
     const [yourBrandEnabled, setYourBrandEnabled] = useState(false);
     const [brandedContentEnabled, setBrandedContentEnabled] = useState(false);
+    const [showCommercialContentWarning, setShowCommercialContentWarning] = useState(false);
     const [isAigc, setIsAigc] = useState(false);
 
-    // Ref for tracking brand content toggle and privacy level changes
-    const brandContentToggleRef = useRef(null);
-    const privacyLevelRef = useRef(null);
+    // Ref for tracking branded content toggle and privacy level changes
+    const brandedContentToggleRef = useRef(null);
 
     // State for custom select dropdown
     const [isPrivacyDropdownOpen, setIsPrivacyDropdownOpen] = useState(false);
@@ -363,8 +380,10 @@ const PrePostingDialog = ({
     }, [privacySelectRef]);
 
     useEffect(() => {
-        try {
-            if (!brandContentToggleRef.current !== brandContentEnabled && brandContentEnabled) {
+        if (brandedContentToggleRef.current !== brandedContentEnabled) {
+            // update ref
+            brandedContentToggleRef.current = brandedContentEnabled;
+            if (brandedContentEnabled) {
                 // brand content toggle was just enabled
                 if (privacyLevel === 'SELF_ONLY') {
                     // privacy level is SELF_ONLY, set to PUBLIC_TO_EVERYONE
@@ -372,22 +391,24 @@ const PrePostingDialog = ({
                         // for public account, set privacy level to public to all
                         setPrivacyLevel('PUBLIC_TO_EVERYONE');
                     } else {
-                        // for private account, set privacy level to mutual follow friends
+                        // for private account, set privacy level to followers
                         setPrivacyLevel('FOLLOWER_OF_CREATOR');
                     }
                 }
-            } else if (privacyLevel !== privacyLevelRef.current && privacyLevel === 'SELF_ONLY') {
-                // privacy level was just changed to private, check brand content toggle
-                if (brandContentEnabled) {
-                    // for private content, the brand content toggle should be disabled
-                    setBrandContentEnabled(false);
-                }
             }
-        } finally {
-            brandContentToggleRef.current = brandContentEnabled;
-            privacyLevelRef.current = privacyLevel;
         }
-    }, [privacyLevel, brandContentEnabled, creatorInfo.type]);
+
+        // note, this override only happens in one direction,
+        // if user set branded content toggle to true, privacy
+        // level of SELF_ONLY is disabled, therefore no way to
+        // override the toggle back.
+    }, [privacyLevel, brandedContentEnabled, creatorInfo.type]);
+
+    useEffect(() => {
+        if (yourBrandEnabled || brandedContentEnabled) {
+            setShowCommercialContentWarning(true);
+        }
+    }, [brandedContentEnabled, yourBrandEnabled]);
 
     // Determine if video duration exceeds maximum
     const durationExceeded =
@@ -395,7 +416,20 @@ const PrePostingDialog = ({
         creatorInfo?.max_video_post_duration_sec &&
         asset.duration > creatorInfo.max_video_post_duration_sec;
 
-    const sendButtonDisabled = durationExceeded || !privacyLevel;
+    let sendButtonDisabled = false;
+    let disabledReason = '';
+
+    if (durationExceeded) {
+        disabledReason = 'Video duration exceeds the maximum allowed for your TikTok account.';
+        sendButtonDisabled = true;
+    } else if (!privacyLevel) {
+        disabledReason = 'Please select a privacy level.';
+        sendButtonDisabled = true;
+    } else if (commercialContentEnabled && !yourBrandEnabled && !brandedContentEnabled) {
+        disabledReason =
+            'You need to indicate if your content promotes yourself, a third party, or both.';
+        sendButtonDisabled = true;
+    }
 
     // Generate compliance text based on brand settings
     const getComplianceText = () => {
@@ -440,8 +474,8 @@ const PrePostingDialog = ({
             disable_duet: duetDisabled,
             disable_stitch: stitchDisabled,
             video_cover_timestamp_ms: videoCoverTimestampMs || 0,
-            brand_content_toggle: brandContentEnabled && yourBrandEnabled,
-            brand_organic_toggle: brandContentEnabled && brandedContentEnabled,
+            brand_content_toggle: commercialContentEnabled && yourBrandEnabled,
+            brand_organic_toggle: commercialContentEnabled && brandedContentEnabled,
             is_aigc: isAigc,
         });
     };
@@ -507,7 +541,6 @@ const PrePostingDialog = ({
                         </WarningMessage>
                     )}
                 </LeftColumn>
-
                 <RightColumn>
                     {/* Creator Info Header */}
                     <Header>
@@ -541,7 +574,7 @@ const PrePostingDialog = ({
                                             <CustomSelectOptionContainer
                                                 key={option}
                                                 className={
-                                                    option === 'SELF_ONLY' && brandContentEnabled
+                                                    option === 'SELF_ONLY' && brandedContentEnabled
                                                         ? 'has-tooltip'
                                                         : ''
                                                 }
@@ -557,7 +590,7 @@ const PrePostingDialog = ({
                                                     }}
                                                     disabled={
                                                         option === 'SELF_ONLY' &&
-                                                        brandContentEnabled
+                                                        brandedContentEnabled
                                                     }
                                                 >
                                                     {parsePrivacyLevel(option)}
@@ -576,6 +609,7 @@ const PrePostingDialog = ({
                                 onChange={setCommentDisabled}
                                 activeColor={TOGGLE_ACTIVE_COLOR}
                                 inactiveColor={TOGGLE_INACTIVE_COLOR}
+                                disabled={creatorInfo.comment_disabled}
                             />
                         </SettingRow>
 
@@ -586,6 +620,7 @@ const PrePostingDialog = ({
                                 onChange={setDuetDisabled}
                                 activeColor={TOGGLE_ACTIVE_COLOR}
                                 inactiveColor={TOGGLE_INACTIVE_COLOR}
+                                disabled={creatorInfo.duet_disabled}
                             />
                         </SettingRow>
 
@@ -596,6 +631,7 @@ const PrePostingDialog = ({
                                 onChange={setStitchDisabled}
                                 activeColor={TOGGLE_ACTIVE_COLOR}
                                 inactiveColor={TOGGLE_INACTIVE_COLOR}
+                                disabled={creatorInfo.stitch_disabled}
                             />
                         </SettingRow>
 
@@ -619,11 +655,11 @@ const PrePostingDialog = ({
                         </SettingRow>
 
                         <SettingRow>
-                            <SettingLabel>Brand Content</SettingLabel>
+                            <SettingLabel>Commercial Content</SettingLabel>
                             <Switch
-                                toggled={brandContentEnabled}
+                                toggled={commercialContentEnabled}
                                 onChange={(value) => {
-                                    setBrandContentEnabled(value);
+                                    setCommercialContentEnabled(value);
                                     if (!value) {
                                         setYourBrandEnabled(false);
                                         setBrandedContentEnabled(false);
@@ -634,7 +670,7 @@ const PrePostingDialog = ({
                             />
                         </SettingRow>
 
-                        {brandContentEnabled && (
+                        {commercialContentEnabled && (
                             <>
                                 <NestedSettingRow>
                                     <SettingLabel>Your Brand</SettingLabel>
@@ -669,22 +705,29 @@ const PrePostingDialog = ({
                         </SettingRow>
                     </SettingsSection>
                 </RightColumn>
-
                 <ComplianceText>{getComplianceText()}</ComplianceText>
-
                 <ButtonRow>
                     <Button color={ButtonColors.SECONDARY} onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button
+                    <SendButton
                         color={ButtonColors.PRIMARY}
                         onClick={handleConfirm}
                         disabled={sendButtonDisabled}
+                        className={sendButtonDisabled ? 'show-disable-reason' : ''}
+                        $disabledReason={disabledReason}
                     >
                         Post to TikTok
-                    </Button>
+                    </SendButton>
                 </ButtonRow>
             </Content>
+            {showCommercialContentWarning && (
+                <CommercialContentPrompt
+                    onClose={() => setShowCommercialContentWarning(false)}
+                    brandedContentEnabled={brandedContentEnabled}
+                    yourBrandEnabled={yourBrandEnabled}
+                />
+            )}
         </Modal>
     );
 };
