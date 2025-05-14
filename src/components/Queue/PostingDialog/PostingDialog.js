@@ -174,15 +174,43 @@ const SettingRow = styled.div`
     border-bottom: 1px solid #eee;
 `;
 
-const NestedSettingRow = styled(SettingRow)`
+const BrandContentSettingRow = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 50px;
+    grid-template-rows: auto;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+`;
+
+const NestedBrandContentSettingRow = styled(BrandContentSettingRow)`
+    display: grid:
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto;
     margin-left: 24px;
     padding: 8px 0;
 `;
 
+const SettingGroup = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
+
 const SettingLabel = styled.label`
     font-size: 16px;
+    font-weight: 600;
     color: #333;
 `;
+
+const SettingDescription = styled.label`
+    font-size: 14px;
+    color: #666;
+`
+const SwitchContainer = styled.div`
+    height: 100%;
+    display: flex;
+    justify-content: flex-start;
+`
 
 const WarningMessage = styled.div`
     color: #d93025;
@@ -340,7 +368,6 @@ const PrePostingDialog = ({
     onPlayVideo,
 }) => {
     // State for configurable settings
-    console.log('creatorInfo', creatorInfo);
     const [privacyLevel, setPrivacyLevel] = useState(undefined);
     const [commentDisabled, setCommentDisabled] = useState(creatorInfo?.comment_disabled || false);
     const [duetDisabled, setDuetDisabled] = useState(creatorInfo?.duet_disabled || false);
@@ -654,8 +681,14 @@ const PrePostingDialog = ({
                             />
                         </SettingRow>
 
-                        <SettingRow>
-                            <SettingLabel>Commercial Content</SettingLabel>
+                        <BrandContentSettingRow>
+                            <SettingGroup>
+                                <SettingLabel>Disclose video content</SettingLabel>
+                                <SettingDescription>
+                                    Turn on to disclose that this video promotes goods or services in exchange for something of value.
+                                    Your video could promote yourself, a third party, or both.
+                                </SettingDescription>
+                            </SettingGroup>
                             <Switch
                                 toggled={commercialContentEnabled}
                                 onChange={(value) => {
@@ -668,29 +701,45 @@ const PrePostingDialog = ({
                                 activeColor={TOGGLE_ACTIVE_COLOR}
                                 inactiveColor={TOGGLE_INACTIVE_COLOR}
                             />
-                        </SettingRow>
+                        </BrandContentSettingRow>
 
                         {commercialContentEnabled && (
                             <>
-                                <NestedSettingRow>
-                                    <SettingLabel>Your Brand</SettingLabel>
-                                    <Switch
-                                        toggled={yourBrandEnabled}
-                                        onChange={setYourBrandEnabled}
-                                        activeColor={TOGGLE_ACTIVE_COLOR}
-                                        inactiveColor={TOGGLE_INACTIVE_COLOR}
-                                    />
-                                </NestedSettingRow>
+                                <NestedBrandContentSettingRow>
+                                    <SettingGroup>
+                                        <SettingLabel>Your Brand</SettingLabel>
+                                        <SettingDescription>
+                                            You are promoting yourself or your own business.
+                                            This content will be classified as Brand Organic.
+                                        </SettingDescription>
+                                    </SettingGroup>
+                                    <SwitchContainer>
+                                        <Switch
+                                            toggled={yourBrandEnabled}
+                                            onChange={setYourBrandEnabled}
+                                            activeColor={TOGGLE_ACTIVE_COLOR}
+                                            inactiveColor={TOGGLE_INACTIVE_COLOR}
+                                        />
+                                    </SwitchContainer>
+                                </NestedBrandContentSettingRow>
 
-                                <NestedSettingRow>
-                                    <SettingLabel>Branded Content</SettingLabel>
-                                    <Switch
-                                        toggled={brandedContentEnabled}
-                                        onChange={setBrandedContentEnabled}
-                                        activeColor={TOGGLE_ACTIVE_COLOR}
-                                        inactiveColor={TOGGLE_INACTIVE_COLOR}
-                                    />
-                                </NestedSettingRow>
+                                <NestedBrandContentSettingRow>
+                                    <SettingGroup>
+                                        <SettingLabel>Branded Content</SettingLabel>
+                                        <SettingDescription>
+                                            You are promoting another brand or a third party.
+                                            This content will be classified as Branded Content.
+                                        </SettingDescription>
+                                    </SettingGroup>
+                                    <SwitchContainer>
+                                        <Switch
+                                            toggled={brandedContentEnabled}
+                                            onChange={setBrandedContentEnabled}
+                                            activeColor={TOGGLE_ACTIVE_COLOR}
+                                            inactiveColor={TOGGLE_INACTIVE_COLOR}
+                                        />
+                                    </SwitchContainer>
+                                </NestedBrandContentSettingRow>
                             </>
                         )}
 
