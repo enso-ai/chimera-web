@@ -5,7 +5,7 @@ import { Button } from 'components/Button';
 import { ButtonColors, TT_MUSIC_CMP_URL, TT_BC_CMP_URL } from 'constants';
 import { FiPlay, FiChevronDown } from 'react-icons/fi'; // Added FiChevronDown
 import Switch from 'components/Switch';
-import { useAlerts, ALERT_ERROR, ALERT_WARNING } from 'hocs/alert';
+import { useAlerts, ALERT_ERROR } from 'hocs/alert';
 import CommercialContentPrompt from './CommercialContentPrompt';
 
 // Define colors for the toggle switches
@@ -705,6 +705,14 @@ const PrePostingDialog = ({
 
                         {commercialContentEnabled && (
                             <>
+                                { (brandedContentEnabled || yourBrandEnabled) && (
+                                <NestedBrandContentSettingRow>
+                                    <CommercialContentPrompt
+                                        brandedContentEnabled={brandedContentEnabled}
+                                        yourBrandEnabled={yourBrandEnabled}
+                                    />
+                                </NestedBrandContentSettingRow>
+                                )}
                                 <NestedBrandContentSettingRow>
                                     <SettingGroup>
                                         <SettingLabel>Your Brand</SettingLabel>
@@ -770,13 +778,6 @@ const PrePostingDialog = ({
                     </SendButton>
                 </ButtonRow>
             </Content>
-            {showCommercialContentWarning && (
-                <CommercialContentPrompt
-                    onClose={() => setShowCommercialContentWarning(false)}
-                    brandedContentEnabled={brandedContentEnabled}
-                    yourBrandEnabled={yourBrandEnabled}
-                />
-            )}
         </Modal>
     );
 };
