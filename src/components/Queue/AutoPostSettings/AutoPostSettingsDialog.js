@@ -7,12 +7,9 @@ import { convertUtcToPst, convertPstToUtc, roundTimeUpToNearest10Minutes } from 
 
 const MenuContainer = styled.div`
     padding: 24px 40px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    /* Adjusted rows to accommodate new time input and helper text */
-    grid-template-rows: auto auto auto auto auto;
+    display: flex;
+    flex-direction: column;
     gap: 15px; /* Slightly reduced gap */
-    align-items: center;
     width: 500px;
     max-height: 90vh;
     overflow-y: auto;
@@ -146,6 +143,7 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
     const [initialHour, initialMinute] = initialPstTime.split(':');
     const [postHour, setPostHour] = useState(initialHour);
     const [postMinute, setPostMinute] = useState(initialMinute);
+    const [isAigc, setIsAigc] = useState(settings?.is_aigc ?? false);
     const [alertEnabled, setAlertEnabled] = useState(settings?.alert_enabled ?? false);
     const [alertTriggerThreshold, setAlertTriggerThreshold] = useState(
         settings?.alert_trigger_threshold ?? 5
@@ -244,8 +242,8 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
                     post_amount: parseInt(postAmount, 10),
                     post_interval: parseInt(postInterval, 10),
                     post_time: finalPostTimeUtc, // Send UTC time, or null/undefined if not applicable
+                    is_aigc: isAigc,
                 }),
-                // Always include alert details
                 alert_enabled: alertEnabled,
                 alert_trigger_threshold: parseInt(alertTriggerThreshold, 10),
                 alert_email_destination: alertEmailDestination,
@@ -271,6 +269,7 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
         }
     }, [
         validateForm,
+        isAigc,
         scheduleEnabled,
         postAmount,
         postInterval,
@@ -284,7 +283,26 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
 
     const PostingRules = (
         <Section>
+            <SectionTitle>Tiktok Posting Setting</SectionTitle>
+            <div/>
+            <FormLabel htmlFor='is_aigc'>
+                AI Generated Content:
+            </FormLabel>
+            <SwitchContainer>
+                <Switch
+                    toggled={isAigc}
+                    activeColor='#4CAF50'
+                    inactiveColor='#adb5bd'
+                    onChange={setIsAigc}
+                />
+            </SwitchContainer>
+        </Section>
+    )
+
+    const AutoPostingRules = (
+        <Section>
             <SectionTitle>Schedule Posting</SectionTitle>
+
             <SwitchContainer>
                 <Switch
                     toggled={scheduleEnabled}
@@ -399,6 +417,7 @@ export default function AutoPostSettingDialog({ settings, onClose, onSave }) {
             <MenuContainer>
                 <ModalTitle>Schedule Settings</ModalTitle>
                 {PostingRules}
+                {AutoPostingRules}
                 {AlertRules}
                 <ErrorMessage>{error}</ErrorMessage>
                 <ButtonsWrapper>
